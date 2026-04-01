@@ -1,9 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { CategoricalColorNamespace } from '@superset-ui/core';
 import { chunkFacetValuesIntoBalancedRows } from './layout';
 import FacetPanel from './FacetPanel';
 import type {
   FacetPanelData,
+  FacetZoomState,
   SupersetPluginChartFacetedScatterSpcProps,
 } from './types';
 
@@ -43,6 +44,8 @@ export default function FacetedScatterSpcChart({
   const colorScale = useMemo(() => CategoricalColorNamespace.getScale(colorScheme), [colorScheme]);
   const effectiveLegendValues = legendValues.length ? legendValues : buildLegendValues(panels);
   const rows = chunkFacetValuesIntoBalancedRows(panels, Math.max(layout.cols, 1));
+  const [sharedZoom, setSharedZoom] = useState<FacetZoomState | null>(null);
+  const [selectedXKey, setSelectedXKey] = useState<string | null>(null);
   const titleHeight = chartTitle ? 28 : 0;
   const legendHeight = showLegend && effectiveLegendValues.length ? 34 : 0;
   const availableHeight = Math.max(
@@ -145,6 +148,14 @@ export default function FacetedScatterSpcChart({
                     upperSpecLimit={upperSpecLimit}
                     lowerSpecLimit={lowerSpecLimit}
                     showDataZoom={showDataZoom}
+                    sharedZoom={sharedZoom}
+                    selectedXKey={selectedXKey}
+                    onZoomChange={setSharedZoom}
+                    onSelectionChange={selectionKey =>
+                      setSelectedXKey(current =>
+                        current === selectionKey ? null : selectionKey,
+                      )
+                    }
                     getColor={colorScale}
                   />
                 ))}

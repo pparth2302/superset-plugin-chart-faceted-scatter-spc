@@ -1,4 +1,5 @@
 import _pt from "prop-types";
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 import React, { useEffect, useMemo, useRef } from 'react';
 import * as echarts from 'echarts';
 import { getNumberFormatter, getTimeFormatter } from '@superset-ui/core';
@@ -29,6 +30,10 @@ function formatTimeAxisValue(value, formatter) {
 function escapeHtml(value) {
   return String(value != null ? value : '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
+function getSelectionKey(value, axisType) {
+  var normalizedValue = asXAxisValue(value, axisType);
+  return normalizedValue === null ? null : String(normalizedValue);
+}
 export default function FacetPanel(_ref) {
   var {
     panel,
@@ -43,6 +48,10 @@ export default function FacetPanel(_ref) {
     upperSpecLimit,
     lowerSpecLimit,
     showDataZoom,
+    sharedZoom,
+    selectedXKey,
+    onZoomChange,
+    onSelectionChange,
     getColor
   } = _ref;
   var containerRef = useRef(null);
@@ -73,7 +82,15 @@ export default function FacetPanel(_ref) {
         },
         data: points.map(point => ({
           value: [asXAxisValue(point.x, xAxisType), point.y],
-          tooltipValues: point.tooltipValues
+          tooltipValues: point.tooltipValues,
+          selectionKey: getSelectionKey(point.x, xAxisType),
+          symbolSize: selectedXKey && getSelectionKey(point.x, xAxisType) === selectedXKey ? markerSize + 3 : markerSize,
+          itemStyle: {
+            color: getColor(groupKey),
+            opacity: selectedXKey === null ? markerOpacity : getSelectionKey(point.x, xAxisType) === selectedXKey ? 1 : 0.14,
+            borderColor: selectedXKey && getSelectionKey(point.x, xAxisType) === selectedXKey ? '#0f172a' : getColor(groupKey),
+            borderWidth: selectedXKey && getSelectionKey(point.x, xAxisType) === selectedXKey ? 1.5 : 0
+          }
         })).filter(point => point.value[0] !== null),
         z: 3 + index,
         markArea: lowerSpecLimit !== null && upperSpecLimit !== null && index === 0 ? {
@@ -163,11 +180,17 @@ export default function FacetPanel(_ref) {
           show: false
         }
       },
-      dataZoom: showDataZoom ? [{
+      dataZoom: showDataZoom ? [_extends({
         type: 'inside',
         xAxisIndex: 0,
         filterMode: 'filter'
-      }] : undefined,
+      }, sharedZoom || {}), _extends({
+        type: 'slider',
+        xAxisIndex: 0,
+        filterMode: 'filter',
+        height: 18,
+        bottom: 8
+      }, sharedZoom || {})] : undefined,
       yAxis: {
         type: 'value',
         name: yAxisLabel,
@@ -182,13 +205,39 @@ export default function FacetPanel(_ref) {
       },
       series
     });
+    var handleDataZoom = () => {
+      var _option$dataZoom;
+      var option = chart.getOption();
+      var currentZoom = ((_option$dataZoom = option.dataZoom) == null ? void 0 : _option$dataZoom[0]) || {};
+      onZoomChange({
+        start: currentZoom.start,
+        end: currentZoom.end,
+        startValue: currentZoom.startValue,
+        endValue: currentZoom.endValue
+      });
+    };
+    var handleRestore = () => {
+      onZoomChange(null);
+      onSelectionChange(null);
+    };
+    var handleClick = params => {
+      var _dataPoint$selectionK;
+      var dataPoint = params.data;
+      onSelectionChange((_dataPoint$selectionK = dataPoint == null ? void 0 : dataPoint.selectionKey) != null ? _dataPoint$selectionK : null);
+    };
+    chart.on('datazoom', handleDataZoom);
+    chart.on('restore', handleRestore);
+    chart.on('click', handleClick);
     var resizeObserver = new ResizeObserver(() => chart.resize());
     resizeObserver.observe(containerRef.current);
     return () => {
       resizeObserver.disconnect();
+      chart.off('datazoom', handleDataZoom);
+      chart.off('restore', handleRestore);
+      chart.off('click', handleClick);
       chart.dispose();
     };
-  }, [getColor, lowerSpecLimit, markerOpacity, markerSize, numberFormatter, panel, timeFormatter, upperSpecLimit, xAxisLabel, xAxisType, yAxisLabel, yDomain, showDataZoom]);
+  }, [getColor, lowerSpecLimit, markerOpacity, markerSize, numberFormatter, panel, timeFormatter, upperSpecLimit, xAxisLabel, xAxisType, yAxisLabel, yDomain, showDataZoom, sharedZoom, selectedXKey, onZoomChange, onSelectionChange]);
   return /*#__PURE__*/React.createElement("div", {
     style: {
       background: '#ffffff',
@@ -220,5 +269,8 @@ FacetPanel.propTypes = {
   upperSpecLimit: _pt.oneOfType([_pt.number, _pt.oneOf([null])]),
   lowerSpecLimit: _pt.oneOfType([_pt.number, _pt.oneOf([null])]),
   showDataZoom: _pt.bool.isRequired,
+  selectedXKey: _pt.oneOfType([_pt.string, _pt.oneOf([null])]),
+  onZoomChange: _pt.func.isRequired,
+  onSelectionChange: _pt.func.isRequired,
   getColor: _pt.func.isRequired
 };

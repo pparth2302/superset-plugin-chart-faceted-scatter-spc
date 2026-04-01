@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import * as echarts from 'echarts';
 import { getNumberFormatter, getTimeFormatter } from '@superset-ui/core';
-import type { FacetPanelData } from './types';
+import type { FacetPanelData, FacetZoomState } from './types';
 
 interface FacetPanelProps {
   panel: FacetPanelData;
@@ -17,6 +17,10 @@ interface FacetPanelProps {
   upperSpecLimit: number | null;
   lowerSpecLimit: number | null;
   showDataZoom: boolean;
+  sharedZoom: FacetZoomState | null;
+  selectedXKey: string | null;
+  onZoomChange: (zoom: FacetZoomState | null) => void;
+  onSelectionChange: (selectionKey: string | null) => void;
   getColor: (key: string) => string;
 }
 
@@ -60,6 +64,11 @@ function escapeHtml(value: unknown) {
     .replace(/'/g, '&#39;');
 }
 
+function getSelectionKey(value: unknown, axisType: FacetPanelProps['xAxisType']) {
+  const normalizedValue = asXAxisValue(value, axisType);
+  return normalizedValue === null ? null : String(normalizedValue);
+}
+
 export default function FacetPanel({
   panel,
   height,
@@ -73,6 +82,10 @@ export default function FacetPanel({
   upperSpecLimit,
   lowerSpecLimit,
   showDataZoom,
+  sharedZoom,
+  selectedXKey,
+  onZoomChange,
+  onSelectionChange,
   getColor,
 }: FacetPanelProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -106,6 +119,26 @@ export default function FacetPanel({
         .map(point => ({
           value: [asXAxisValue(point.x, xAxisType), point.y],
           tooltipValues: point.tooltipValues,
+          selectionKey: getSelectionKey(point.x, xAxisType),
+          symbolSize:
+            selectedXKey && getSelectionKey(point.x, xAxisType) === selectedXKey
+              ? markerSize + 3
+              : markerSize,
+          itemStyle: {
+            color: getColor(groupKey),
+            opacity:
+              selectedXKey === null
+                ? markerOpacity
+                : getSelectionKey(point.x, xAxisType) === selectedXKey
+                  ? 1
+                  : 0.14,
+            borderColor:
+              selectedXKey && getSelectionKey(point.x, xAxisType) === selectedXKey
+                ? '#0f172a'
+                : getColor(groupKey),
+            borderWidth:
+              selectedXKey && getSelectionKey(point.x, xAxisType) === selectedXKey ? 1.5 : 0,
+          },
         }))
         .filter(point => point.value[0] !== null),
       z: 3 + index,
@@ -205,6 +238,15 @@ export default function FacetPanel({
               type: 'inside',
               xAxisIndex: 0,
               filterMode: 'filter',
+              ...(sharedZoom || {}),
+            },
+            {
+              type: 'slider',
+              xAxisIndex: 0,
+              filterMode: 'filter',
+              height: 18,
+              bottom: 8,
+              ...(sharedZoom || {}),
             },
           ]
         : undefined,
@@ -223,11 +265,52 @@ export default function FacetPanel({
       series,
     });
 
+    const handleDataZoom = () => {
+      const option = chart.getOption() as {
+        dataZoom?: Array<{
+          start?: number;
+          end?: number;
+          startValue?: string | number;
+          endValue?: string | number;
+        }>;
+      };
+      const currentZoom = (option.dataZoom?.[0] || {}) as {
+        start?: number;
+        end?: number;
+        startValue?: string | number;
+        endValue?: string | number;
+      };
+
+      onZoomChange({
+        start: currentZoom.start,
+        end: currentZoom.end,
+        startValue: currentZoom.startValue,
+        endValue: currentZoom.endValue,
+      });
+    };
+
+    const handleRestore = () => {
+      onZoomChange(null);
+      onSelectionChange(null);
+    };
+
+    const handleClick = (params: { data?: unknown }) => {
+      const dataPoint = params.data as { selectionKey?: string | null } | null | undefined;
+      onSelectionChange(dataPoint?.selectionKey ?? null);
+    };
+
+    chart.on('datazoom', handleDataZoom);
+    chart.on('restore', handleRestore);
+    chart.on('click', handleClick);
+
     const resizeObserver = new ResizeObserver(() => chart.resize());
     resizeObserver.observe(containerRef.current);
 
     return () => {
       resizeObserver.disconnect();
+      chart.off('datazoom', handleDataZoom);
+      chart.off('restore', handleRestore);
+      chart.off('click', handleClick);
       chart.dispose();
     };
   }, [
@@ -244,6 +327,10 @@ export default function FacetPanel({
     yAxisLabel,
     yDomain,
     showDataZoom,
+    sharedZoom,
+    selectedXKey,
+    onZoomChange,
+    onSelectionChange,
   ]);
 
   return (

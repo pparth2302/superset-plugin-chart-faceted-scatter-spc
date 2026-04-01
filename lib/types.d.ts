@@ -36,6 +36,12 @@ export interface BalancedFacetLayout {
     rowCounts: number[];
     positions: FacetLayoutPosition[];
 }
+export interface FacetZoomState {
+    start?: number;
+    end?: number;
+    startValue?: string | number;
+    endValue?: string | number;
+}
 export interface SupersetPluginChartFacetedScatterSpcQueryFormData extends QueryFormData {
     x_axis?: ColumnLike;
     metrics?: QueryFormMetric[];
