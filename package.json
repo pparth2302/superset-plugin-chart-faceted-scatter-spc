@@ -1,6 +1,6 @@
 {
   "name": "@pparth2302/superset-plugin-chart-faceted-scatter-spc",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Apache Superset 6.0.0 plugin for faceted manufacturing SPC scatter charts built with ECharts.",
   "sideEffects": false,
   "main": "lib/index.js",

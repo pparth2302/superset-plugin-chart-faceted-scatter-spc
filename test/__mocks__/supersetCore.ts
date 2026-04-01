@@ -80,8 +80,32 @@ export function getNumberFormatter() {
   return (value: number) => String(value);
 }
 
-export function getTimeFormatter() {
-  return (value: number | string) => String(value);
+export function getTimeFormatter(format?: string) {
+  return (value: number | string | Date) => {
+    const normalizedValue =
+      typeof value === 'string' &&
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(value)
+        ? `${value}Z`
+        : value;
+    const date = normalizedValue instanceof Date ? normalizedValue : new Date(normalizedValue);
+    if (Number.isNaN(date.getTime())) {
+      return String(value);
+    }
+
+    if (format === '%m-%d-%Y %I:%M:%S %p') {
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(date.getUTCDate()).padStart(2, '0');
+      const year = date.getUTCFullYear();
+      const rawHours = date.getUTCHours();
+      const hours = String(rawHours % 12 || 12).padStart(2, '0');
+      const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+      const seconds = String(date.getUTCSeconds()).padStart(2, '0');
+      const meridiem = rawHours >= 12 ? 'PM' : 'AM';
+      return `${month}-${day}-${year} ${hours}:${minutes}:${seconds} ${meridiem}`;
+    }
+
+    return date.toISOString();
+  };
 }
 
 export function t(value: string) {

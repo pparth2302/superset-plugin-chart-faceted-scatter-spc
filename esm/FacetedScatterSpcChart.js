@@ -19,6 +19,7 @@ export default function FacetedScatterSpcChart(_ref) {
     markerSize,
     markerOpacity,
     showLegend,
+    showDataZoom,
     timeFormat,
     yDomain,
     upperSpecLimit,
@@ -142,6 +143,7 @@ export default function FacetedScatterSpcChart(_ref) {
     timeFormat: timeFormat,
     upperSpecLimit: upperSpecLimit,
     lowerSpecLimit: lowerSpecLimit,
+    showDataZoom: showDataZoom,
     getColor: colorScale
   }))))))));
 }

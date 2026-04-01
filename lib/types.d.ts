@@ -44,12 +44,16 @@ export interface SupersetPluginChartFacetedScatterSpcQueryFormData extends Query
     color_column?: ColumnLike;
     tooltip_columns?: ColumnLike[];
     chart_title?: string;
+    x_axis_label?: string;
+    y_axis_label?: string;
     upper_spec_limit?: number | string | null;
     lower_spec_limit?: number | string | null;
     marker_size?: number | string;
     marker_opacity?: number | string;
     show_legend?: boolean;
+    show_data_zoom?: boolean;
     time_format?: string;
+    tooltip_time_format?: string;
     y_axis_min?: number | string | null;
     y_axis_max?: number | string | null;
     facet_sort_order?: FacetSortOrder;
@@ -77,7 +81,9 @@ export interface SupersetPluginChartFacetedScatterSpcProps {
     markerSize: number;
     markerOpacity: number;
     showLegend: boolean;
+    showDataZoom: boolean;
     timeFormat: string;
+    tooltipTimeFormat: string;
     yDomain: [number, number];
     upperSpecLimit: number | null;
     lowerSpecLimit: number | null;

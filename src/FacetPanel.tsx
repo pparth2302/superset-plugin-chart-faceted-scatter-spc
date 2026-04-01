@@ -16,6 +16,7 @@ interface FacetPanelProps {
   timeFormat: string;
   upperSpecLimit: number | null;
   lowerSpecLimit: number | null;
+  showDataZoom: boolean;
   getColor: (key: string) => string;
 }
 
@@ -71,6 +72,7 @@ export default function FacetPanel({
   timeFormat,
   upperSpecLimit,
   lowerSpecLimit,
+  showDataZoom,
   getColor,
 }: FacetPanelProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -171,6 +173,18 @@ export default function FacetPanel({
             .join('');
         },
       },
+      toolbox: showDataZoom
+        ? {
+            right: 8,
+            top: 4,
+            feature: {
+              dataZoom: {
+                yAxisIndex: 'none',
+              },
+              restore: {},
+            },
+          }
+        : undefined,
       xAxis: {
         type: xAxisType,
         name: xAxisLabel,
@@ -185,6 +199,15 @@ export default function FacetPanel({
           show: false,
         },
       },
+      dataZoom: showDataZoom
+        ? [
+            {
+              type: 'inside',
+              xAxisIndex: 0,
+              filterMode: 'filter',
+            },
+          ]
+        : undefined,
       yAxis: {
         type: 'value',
         name: yAxisLabel,
@@ -220,6 +243,7 @@ export default function FacetPanel({
     xAxisType,
     yAxisLabel,
     yDomain,
+    showDataZoom,
   ]);
 
   return (

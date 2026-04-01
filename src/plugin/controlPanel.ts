@@ -114,6 +114,28 @@ const controlPanel: ControlPanelConfig = {
             },
           },
         ],
+        [
+          {
+            name: 'x_axis_label',
+            config: {
+              type: 'TextControl',
+              label: t('X-axis label'),
+              default: '',
+              renderTrigger: true,
+              description: t('Custom label applied to the x-axis in every facet panel.'),
+            },
+          },
+          {
+            name: 'y_axis_label',
+            config: {
+              type: 'TextControl',
+              label: t('Y-axis label'),
+              default: '',
+              renderTrigger: true,
+              description: t('Custom shared Y-axis label shown at the left of the facet grid.'),
+            },
+          },
+        ],
         ['color_scheme'],
         [
           {
@@ -126,11 +148,31 @@ const controlPanel: ControlPanelConfig = {
             },
           },
           {
+            name: 'show_data_zoom',
+            config: {
+              type: 'CheckboxControl',
+              label: t('Show data zoom'),
+              default: true,
+              renderTrigger: true,
+            },
+          },
+        ],
+        [
+          {
             name: 'time_format',
             config: {
               ...sharedControls.x_axis_time_format,
               label: t('Time format'),
               default: 'smart_date',
+            },
+          },
+          {
+            name: 'tooltip_time_format',
+            config: {
+              ...sharedControls.x_axis_time_format,
+              label: t('Tooltip time format'),
+              default: '%m-%d-%Y %I:%M:%S %p',
+              description: t('Format applied to timestamp values in tooltips.'),
             },
           },
         ],

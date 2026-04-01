@@ -2,6 +2,7 @@ import {
   ChartProps,
   ensureIsArray,
   getMetricLabel,
+  getTimeFormatter,
 } from '@superset-ui/core';
 import type { QueryFormData, TimeseriesDataRecord } from '@superset-ui/core';
 import { getBalancedFacetLayout, sortFacetValues } from '../layout';
@@ -114,6 +115,25 @@ function computeYDomain(
   return [min, max];
 }
 
+function formatTemporalValue(
+  value: unknown,
+  formatter: (value: number | Date) => string,
+) {
+  if (value instanceof Date) {
+    return formatter(value);
+  }
+
+  if (typeof value === 'number') {
+    return formatter(value);
+  }
+
+  const rawValue = String(value);
+  const normalizedValue =
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(rawValue) ? `${rawValue}Z` : rawValue;
+  const parsed = Date.parse(normalizedValue);
+  return Number.isNaN(parsed) ? value : formatter(parsed);
+}
+
 function buildLegendValues(panels: FacetPanelData[]) {
   return Array.from(
     new Set(
@@ -140,8 +160,13 @@ export default function transformProps(
     .map(metric => getMetricLabel(metric as never))
     .filter(Boolean);
   const xAxisLabel = getColumnLabel(rawFormData.x_axis) ?? 'timestamp';
+  const resolvedXAxisLabel =
+    rawFormData.x_axis_label?.trim() || xAxisLabel;
   const yAxisLabel =
-    metricLabels[0] ?? getColumnLabel(rawFormData.y_axis_column) ?? 'value';
+    rawFormData.y_axis_label?.trim() ||
+    metricLabels[0] ||
+    getColumnLabel(rawFormData.y_axis_column) ||
+    'value';
   const facetColumnLabel = getColumnLabel(rawFormData.facet_column) ?? 'facet_value';
   const colorColumnLabel = getColumnLabel(rawFormData.color_column);
   const tooltipColumnLabels = ensureIsArray(rawFormData.tooltip_columns)
@@ -161,6 +186,8 @@ export default function transformProps(
   const yAxisMin = parseOptionalNumber(rawFormData.y_axis_min);
   const yAxisMax = parseOptionalNumber(rawFormData.y_axis_max);
   const xAxisType = inferXAxisType(xAxisLabel, rawFormData, data);
+  const tooltipTimeFormat = rawFormData.tooltip_time_format ?? '%m-%d-%Y %I:%M:%S %p';
+  const tooltipTimeFormatter = getTimeFormatter(tooltipTimeFormat);
   const sortedFacetValues = sortFacetValues(
     data.map(row => row[facetColumnLabel]),
     rawFormData.facet_sort_order ?? 'asc',
@@ -174,40 +201,45 @@ export default function transformProps(
           return accumulator;
         }
 
-          const yValue = Number(row[yAxisLabel]);
-          if (!Number.isFinite(yValue)) {
-            return accumulator;
-          }
+        const yFieldKey = metricLabels[0] ?? getColumnLabel(rawFormData.y_axis_column) ?? 'value';
+        const yValue = Number(row[yFieldKey]);
+        if (!Number.isFinite(yValue)) {
+          return accumulator;
+        }
 
-          accumulator.push({
-            x: row[xAxisLabel],
-            y: yValue,
-            facetValue,
-            colorValue:
-              colorColumnLabel && row[colorColumnLabel] != null
-                ? String(row[colorColumnLabel])
-                : undefined,
-            tooltipValues: [
-              { label: xAxisLabel, value: row[xAxisLabel] },
-              { label: facetColumnLabel, value: facetValue },
-              { label: yAxisLabel, value: row[yAxisLabel] },
-              ...(colorColumnLabel && row[colorColumnLabel] != null
-                ? [{ label: colorColumnLabel, value: row[colorColumnLabel] }]
-                : []),
-              ...tooltipColumnLabels
-                .filter(
-                  label =>
-                    ![xAxisLabel, facetColumnLabel, yAxisLabel, colorColumnLabel].includes(
-                      label,
-                    ),
-                )
-                .map(label => ({
-                  label,
-                  value: row[label],
-                })),
-            ],
-            row,
-          });
+        const formatTooltipValue = (label: string, value: unknown) =>
+          xAxisType === 'time' &&
+          (label === xAxisLabel || rawFormData.temporal_columns_lookup?.[label])
+            ? formatTemporalValue(value, tooltipTimeFormatter)
+            : value;
+
+        accumulator.push({
+          x: row[xAxisLabel],
+          y: yValue,
+          facetValue,
+          colorValue:
+            colorColumnLabel && row[colorColumnLabel] != null
+              ? String(row[colorColumnLabel])
+              : undefined,
+          tooltipValues: [
+            { label: resolvedXAxisLabel, value: formatTooltipValue(xAxisLabel, row[xAxisLabel]) },
+            { label: facetColumnLabel, value: facetValue },
+            { label: yAxisLabel, value: row[yFieldKey] },
+            ...(colorColumnLabel && row[colorColumnLabel] != null
+              ? [{ label: colorColumnLabel, value: row[colorColumnLabel] }]
+              : []),
+            ...tooltipColumnLabels
+              .filter(
+                label =>
+                  ![xAxisLabel, facetColumnLabel, yFieldKey, colorColumnLabel].includes(label),
+              )
+              .map(label => ({
+                label,
+                value: formatTooltipValue(label, row[label]),
+              })),
+          ],
+          row,
+        });
 
         return accumulator;
       }, []);
@@ -226,7 +258,7 @@ export default function transformProps(
     width,
     height,
     chartTitle: rawFormData.chart_title ?? '',
-    xAxisLabel,
+    xAxisLabel: resolvedXAxisLabel,
     yAxisLabel,
     facetColumnLabel,
     colorColumnLabel,
@@ -238,7 +270,9 @@ export default function transformProps(
     markerSize,
     markerOpacity,
     showLegend: rawFormData.show_legend ?? true,
+    showDataZoom: rawFormData.show_data_zoom ?? true,
     timeFormat: rawFormData.time_format ?? 'smart_date',
+    tooltipTimeFormat,
     yDomain: computeYDomain(yValues, {
       userMin: yAxisMin,
       userMax: yAxisMax,

@@ -42,6 +42,7 @@ export default function FacetPanel(_ref) {
     timeFormat,
     upperSpecLimit,
     lowerSpecLimit,
+    showDataZoom,
     getColor
   } = _ref;
   var containerRef = useRef(null);
@@ -139,6 +140,16 @@ export default function FacetPanel(_ref) {
           return tooltipValues.map(item => "<div><strong>" + escapeHtml(item.label) + ":</strong> " + escapeHtml(item.value) + "</div>").join('');
         }
       },
+      toolbox: showDataZoom ? {
+        right: 8,
+        top: 4,
+        feature: {
+          dataZoom: {
+            yAxisIndex: 'none'
+          },
+          restore: {}
+        }
+      } : undefined,
       xAxis: {
         type: xAxisType,
         name: xAxisLabel,
@@ -152,6 +163,11 @@ export default function FacetPanel(_ref) {
           show: false
         }
       },
+      dataZoom: showDataZoom ? [{
+        type: 'inside',
+        xAxisIndex: 0,
+        filterMode: 'filter'
+      }] : undefined,
       yAxis: {
         type: 'value',
         name: yAxisLabel,
@@ -172,7 +188,7 @@ export default function FacetPanel(_ref) {
       resizeObserver.disconnect();
       chart.dispose();
     };
-  }, [getColor, lowerSpecLimit, markerOpacity, markerSize, numberFormatter, panel, timeFormatter, upperSpecLimit, xAxisLabel, xAxisType, yAxisLabel, yDomain]);
+  }, [getColor, lowerSpecLimit, markerOpacity, markerSize, numberFormatter, panel, timeFormatter, upperSpecLimit, xAxisLabel, xAxisType, yAxisLabel, yDomain, showDataZoom]);
   return /*#__PURE__*/React.createElement("div", {
     style: {
       background: '#ffffff',
@@ -203,5 +219,6 @@ FacetPanel.propTypes = {
   timeFormat: _pt.string.isRequired,
   upperSpecLimit: _pt.oneOfType([_pt.number, _pt.oneOf([null])]),
   lowerSpecLimit: _pt.oneOfType([_pt.number, _pt.oneOf([null])]),
+  showDataZoom: _pt.bool.isRequired,
   getColor: _pt.func.isRequired
 };

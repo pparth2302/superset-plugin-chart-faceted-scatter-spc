@@ -10,10 +10,13 @@ describe('transformProps', () => {
         formData: {
           chart_title: 'Nest or Pallet #',
           x_axis: 'timestamp',
+          x_axis_label: 'Sample Time',
           y_axis_column: 'adhesive_od',
+          y_axis_label: 'Adhesive OD',
           facet_column: 'nest_num',
           color_column: 'status',
           tooltip_columns: ['pallet_id'],
+          tooltip_time_format: '%m-%d-%Y %I:%M:%S %p',
           facet_sort_order: 'asc',
           max_facets: 8,
           max_panels_per_row: 7,
@@ -56,6 +59,13 @@ describe('transformProps', () => {
     expect(props.panels.map(panel => panel.title)).toEqual(['1', '2', '8']);
     expect(props.layout.rowCounts).toEqual([3]);
     expect(props.legendValues).toEqual(['Pass', 'Warn']);
+    expect(props.xAxisLabel).toBe('Sample Time');
+    expect(props.yAxisLabel).toBe('Adhesive OD');
+    expect(props.showDataZoom).toBe(true);
+    expect(props.panels[0].points[0].tooltipValues[0]).toEqual({
+      label: 'Sample Time',
+      value: '03-18-2026 08:00:00 AM',
+    });
     expect(props.yDomain[0]).toBeLessThanOrEqual(7);
     expect(props.yDomain[1]).toBeGreaterThanOrEqual(8);
     expect(props.xAxisType).toBe('time');
