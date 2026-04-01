@@ -1,4 +1,8 @@
-import { QueryFormData, QueryFormMetric, TimeseriesDataRecord } from '@superset-ui/core';
+import type {
+  QueryFormData,
+  QueryFormMetric,
+  TimeseriesDataRecord,
+} from '@superset-ui/core';
 
 export type ColumnLike =
   | string
@@ -11,12 +15,19 @@ export type ColumnLike =
 
 export type FacetSortOrder = 'asc' | 'desc' | 'custom';
 
+export type XAxisType = 'time' | 'value' | 'category';
+
+export interface TooltipEntry {
+  label: string;
+  value: unknown;
+}
+
 export interface FacetPoint {
   x: unknown;
   y: number;
   facetValue: unknown;
   colorValue?: string;
-  tooltipValues: Array<{ label: string; value: unknown }>;
+  tooltipValues: TooltipEntry[];
   row: TimeseriesDataRecord;
 }
 
@@ -62,9 +73,9 @@ export interface SupersetPluginChartFacetedScatterSpcQueryFormData
   max_facets?: number | string;
   max_panels_per_row?: number | string;
   panel_gap?: number | string;
-  tooltip_show_all?: boolean;
   color_scheme?: string;
   row_limit?: number | string;
+  temporal_columns_lookup?: Record<string, boolean>;
 }
 
 export interface SupersetPluginChartFacetedScatterSpcProps {
@@ -75,6 +86,7 @@ export interface SupersetPluginChartFacetedScatterSpcProps {
   yAxisLabel: string;
   facetColumnLabel: string;
   colorColumnLabel?: string;
+  tooltipColumnLabels: string[];
   panels: FacetPanelData[];
   layout: BalancedFacetLayout;
   legendValues: string[];
@@ -87,5 +99,5 @@ export interface SupersetPluginChartFacetedScatterSpcProps {
   upperSpecLimit: number | null;
   lowerSpecLimit: number | null;
   panelGap: number;
-  xAxisType: 'time' | 'value' | 'category';
+  xAxisType: XAxisType;
 }

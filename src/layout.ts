@@ -108,8 +108,9 @@ export function getBalancedFacetLayout(
     };
   }
 
+  const safeMaxCols = Math.max(1, Math.floor(maxCols));
   const rowValues = Array.from({ length: count }, (_, index) => index);
-  const chunks = chunkFacetValuesIntoBalancedRows(rowValues, maxCols);
+  const chunks = chunkFacetValuesIntoBalancedRows(rowValues, safeMaxCols);
   const rowCounts = chunks.map(chunk => chunk.length);
   const positions: FacetLayoutPosition[] = [];
 

@@ -15,6 +15,8 @@ export const sharedControls = {
   metrics: {},
   row_limit: {},
   series: {},
+  x_axis: {},
+  x_axis_time_format: {},
 };
 
 export function contributionOperator() {

@@ -1,22 +1,11 @@
 import { t } from '@superset-ui/core';
 import {
-  ControlPanelConfig,
   sections,
   sharedControls,
 } from '@superset-ui/chart-controls';
+import type { ControlPanelConfig } from '@superset-ui/chart-controls';
 
-function mapDatasourceColumnsToChoices(state: Record<string, any>) {
-  const columns = state.datasource?.columns || [];
-
-  return {
-    choices: columns.map((column: Record<string, any>) => [
-      column.column_name,
-      column.verbose_name || column.column_name,
-    ]),
-  };
-}
-
-const config: ControlPanelConfig = {
+const controlPanel: ControlPanelConfig = {
   controlPanelSections: [
     {
       label: t('Query'),
@@ -27,23 +16,23 @@ const config: ControlPanelConfig = {
           {
             name: 'x_axis',
             config: {
-              type: 'SelectControl',
-              freeForm: false,
-              clearable: false,
+              ...sharedControls.x_axis,
               label: t('X-axis column'),
-              renderTrigger: true,
-              mapStateToProps: mapDatasourceColumnsToChoices,
-              description: t('Timestamp or ordered field plotted on the X-axis of each facet.'),
+              description: t('Timestamp or sequence column used on the horizontal axis.'),
             },
           },
         ],
+        ['time_grain_sqla'],
         [
           {
             name: 'metrics',
             config: {
               ...sharedControls.metrics,
-              label: t('Y-axis metric'),
-              description: t('Aggregated Y value. Leave empty if you want to use a raw numeric column.'),
+              label: t('Y metric'),
+              description: t(
+                'Preferred aggregated Y metric. Leave blank and use Y column below for raw values.',
+              ),
+              validators: [],
             },
           },
         ],
@@ -51,13 +40,12 @@ const config: ControlPanelConfig = {
           {
             name: 'y_axis_column',
             config: {
-              type: 'SelectControl',
-              freeForm: false,
-              clearable: true,
-              label: t('Y-axis raw column'),
-              renderTrigger: true,
-              mapStateToProps: mapDatasourceColumnsToChoices,
-              description: t('Optional raw numeric column for point-level scatter when no metric is selected.'),
+              ...sharedControls.series,
+              label: t('Y column fallback'),
+              description: t(
+                'Raw numeric column used when no aggregated Y metric is selected.',
+              ),
+              validators: [],
             },
           },
         ],
@@ -65,27 +53,22 @@ const config: ControlPanelConfig = {
           {
             name: 'facet_column',
             config: {
-              type: 'SelectControl',
-              freeForm: false,
-              clearable: false,
+              ...sharedControls.series,
               label: t('Facet column'),
-              renderTrigger: true,
-              mapStateToProps: mapDatasourceColumnsToChoices,
-              description: t('Categorical field that determines one panel per distinct value.'),
+              description: t(
+                'Categorical column that splits the chart into SPC panels such as nest, pallet, or cavity.',
+              ),
             },
           },
-        ],
-        [
           {
             name: 'color_column',
             config: {
-              type: 'SelectControl',
-              freeForm: false,
+              ...sharedControls.series,
+              label: t('Color column'),
               clearable: true,
-              label: t('Color / group column'),
-              renderTrigger: true,
-              mapStateToProps: mapDatasourceColumnsToChoices,
-              description: t('Optional field used to color scatter markers and build the legend.'),
+              default: null,
+              description: t('Optional status or grouping column used to color markers.'),
+              validators: [],
             },
           },
         ],
@@ -93,14 +76,12 @@ const config: ControlPanelConfig = {
           {
             name: 'tooltip_columns',
             config: {
-              type: 'SelectControl',
-              freeForm: false,
-              multi: true,
-              clearable: true,
+              ...sharedControls.groupby,
               label: t('Tooltip columns'),
-              renderTrigger: true,
-              mapStateToProps: mapDatasourceColumnsToChoices,
-              description: t('Optional metadata columns appended to the tooltip for each point.'),
+              description: t(
+                'Optional metadata columns included in each point tooltip such as pallet or lot id.',
+              ),
+              default: [],
             },
           },
         ],
@@ -127,55 +108,13 @@ const config: ControlPanelConfig = {
             config: {
               type: 'TextControl',
               label: t('Chart title'),
-              default: 'Nest or Pallet #',
-              renderTrigger: true,
-            },
-          },
-        ],
-        [
-          {
-            name: 'upper_spec_limit',
-            config: {
-              type: 'TextControl',
-              label: t('Upper spec limit'),
-              isFloat: true,
               default: '',
               renderTrigger: true,
-            },
-          },
-          {
-            name: 'lower_spec_limit',
-            config: {
-              type: 'TextControl',
-              label: t('Lower spec limit'),
-              isFloat: true,
-              default: '',
-              renderTrigger: true,
+              description: t('Overall title shown above the facet grid.'),
             },
           },
         ],
-        [
-          {
-            name: 'marker_size',
-            config: {
-              type: 'TextControl',
-              label: t('Marker size'),
-              isInt: true,
-              default: 8,
-              renderTrigger: true,
-            },
-          },
-          {
-            name: 'marker_opacity',
-            config: {
-              type: 'TextControl',
-              label: t('Opacity'),
-              isFloat: true,
-              default: 0.85,
-              renderTrigger: true,
-            },
-          },
-        ],
+        ['color_scheme'],
         [
           {
             name: 'show_legend',
@@ -187,24 +126,38 @@ const config: ControlPanelConfig = {
             },
           },
           {
-            name: 'color_scheme',
+            name: 'time_format',
             config: {
-              type: 'TextControl',
-              label: t('Color scheme'),
-              default: 'supersetColors',
-              renderTrigger: true,
+              ...sharedControls.x_axis_time_format,
+              label: t('Time format'),
+              default: 'smart_date',
             },
           },
         ],
+      ],
+    },
+    {
+      label: t('SPC Limits'),
+      expanded: true,
+      tabOverride: 'customize',
+      controlSetRows: [
         [
           {
-            name: 'time_format',
+            name: 'lower_spec_limit',
             config: {
               type: 'TextControl',
-              label: t('Time format'),
-              default: 'smart_date',
+              label: t('Lower spec limit'),
+              default: '',
               renderTrigger: true,
-              description: t('Formatter key passed to Superset time formatting helpers.'),
+            },
+          },
+          {
+            name: 'upper_spec_limit',
+            config: {
+              type: 'TextControl',
+              label: t('Upper spec limit'),
+              default: '',
+              renderTrigger: true,
             },
           },
         ],
@@ -214,7 +167,6 @@ const config: ControlPanelConfig = {
             config: {
               type: 'TextControl',
               label: t('Y-axis minimum'),
-              isFloat: true,
               default: '',
               renderTrigger: true,
             },
@@ -224,25 +176,31 @@ const config: ControlPanelConfig = {
             config: {
               type: 'TextControl',
               label: t('Y-axis maximum'),
-              isFloat: true,
               default: '',
               renderTrigger: true,
             },
           },
         ],
+      ],
+    },
+    {
+      label: t('Facet Layout'),
+      expanded: true,
+      tabOverride: 'customize',
+      controlSetRows: [
         [
           {
             name: 'facet_sort_order',
             config: {
               type: 'SelectControl',
-              clearable: false,
-              label: t('Facet sort order'),
+              label: t('Facet sort'),
               default: 'asc',
+              clearable: false,
               renderTrigger: true,
               choices: [
                 ['asc', t('Ascending')],
                 ['desc', t('Descending')],
-                ['custom', t('Custom order')],
+                ['custom', t('Custom')],
               ],
             },
           },
@@ -253,7 +211,7 @@ const config: ControlPanelConfig = {
               label: t('Custom facet order'),
               default: '',
               renderTrigger: true,
-              description: t('Comma-separated facet values, for example 1,2,3,4,5,6,7.'),
+              description: t('Comma-separated facet values used when Facet sort is Custom.'),
             },
           },
         ],
@@ -263,8 +221,8 @@ const config: ControlPanelConfig = {
             config: {
               type: 'TextControl',
               label: t('Maximum facets'),
-              isInt: true,
               default: 28,
+              isInt: true,
               renderTrigger: true,
             },
           },
@@ -273,9 +231,10 @@ const config: ControlPanelConfig = {
             config: {
               type: 'TextControl',
               label: t('Maximum panels per row'),
-              isInt: true,
               default: 7,
+              isInt: true,
               renderTrigger: true,
+              description: t('Balanced layout is enforced and the value is capped at seven.'),
             },
           },
         ],
@@ -285,8 +244,36 @@ const config: ControlPanelConfig = {
             config: {
               type: 'TextControl',
               label: t('Panel gap'),
+              default: 12,
               isInt: true,
-              default: 16,
+              renderTrigger: true,
+            },
+          },
+        ],
+      ],
+    },
+    {
+      label: t('Markers'),
+      expanded: true,
+      tabOverride: 'customize',
+      controlSetRows: [
+        [
+          {
+            name: 'marker_size',
+            config: {
+              type: 'TextControl',
+              label: t('Marker size'),
+              default: 8,
+              isInt: true,
+              renderTrigger: true,
+            },
+          },
+          {
+            name: 'marker_opacity',
+            config: {
+              type: 'TextControl',
+              label: t('Opacity'),
+              default: 0.8,
               renderTrigger: true,
             },
           },
@@ -296,4 +283,4 @@ const config: ControlPanelConfig = {
   ],
 };
 
-export default config;
+export default controlPanel;

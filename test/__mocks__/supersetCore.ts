@@ -87,3 +87,15 @@ export function getTimeFormatter() {
 export function t(value: string) {
   return value;
 }
+
+export function validateNonEmpty(value: unknown) {
+  if (Array.isArray(value) && value.length) {
+    return false;
+  }
+
+  if (value !== null && typeof value !== 'undefined' && value !== '') {
+    return false;
+  }
+
+  return 'Required';
+}

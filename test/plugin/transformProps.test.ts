@@ -54,10 +54,11 @@ describe('transformProps', () => {
 
     expect(props.panels).toHaveLength(3);
     expect(props.panels.map(panel => panel.title)).toEqual(['1', '2', '8']);
-    expect(props.layout.rowCounts).toEqual([2, 1]);
+    expect(props.layout.rowCounts).toEqual([3]);
     expect(props.legendValues).toEqual(['Pass', 'Warn']);
     expect(props.yDomain[0]).toBeLessThanOrEqual(7);
     expect(props.yDomain[1]).toBeGreaterThanOrEqual(8);
+    expect(props.xAxisType).toBe('time');
   });
 
   it('uses metric labels when a metric is selected for the y-axis', () => {
@@ -86,5 +87,34 @@ describe('transformProps', () => {
 
     expect(props.yAxisLabel).toBe('AVG(adhesive_od)');
     expect(props.panels[0].points[0].y).toBe(7.18);
+  });
+
+  it('caps panels per row at seven and honors custom facet ordering', () => {
+    const props = transformProps(
+      new ChartProps({
+        width: 1200,
+        height: 800,
+        formData: {
+          x_axis: 'timestamp',
+          y_axis_column: 'adhesive_od',
+          facet_column: 'nest_num',
+          facet_sort_order: 'custom',
+          facet_sort_custom: '3, 1',
+          max_panels_per_row: 99,
+        },
+        queriesData: [
+          {
+            data: [
+              { timestamp: '2026-03-18T08:00:00', nest_num: 1, adhesive_od: 7.18 },
+              { timestamp: '2026-03-18T08:01:00', nest_num: 2, adhesive_od: 7.42 },
+              { timestamp: '2026-03-18T08:02:00', nest_num: 3, adhesive_od: 7.35 },
+            ],
+          },
+        ],
+      }),
+    );
+
+    expect(props.panels.map(panel => panel.title)).toEqual(['3', '1', '2']);
+    expect(props.layout.cols).toBeLessThanOrEqual(7);
   });
 });

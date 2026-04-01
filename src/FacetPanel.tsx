@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import * as echarts from 'echarts';
 import { getNumberFormatter, getTimeFormatter } from '@superset-ui/core';
-import { FacetPanelData } from './types';
+import type { FacetPanelData } from './types';
 
 interface FacetPanelProps {
   panel: FacetPanelData;
@@ -41,6 +41,24 @@ function asXAxisValue(value: unknown, axisType: FacetPanelProps['xAxisType']) {
   return value == null ? null : String(value);
 }
 
+function formatTimeAxisValue(value: number | string, formatter: (value: number | Date) => string) {
+  if (typeof value === 'number') {
+    return formatter(value);
+  }
+
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? value : formatter(parsed);
+}
+
+function escapeHtml(value: unknown) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export default function FacetPanel({
   panel,
   height,
@@ -76,10 +94,10 @@ export default function FacetPanel({
 
     const series = Object.entries(groupedPoints).map(([groupKey, points], index) => ({
       type: 'scatter',
-      name: groupKey === '__default__' ? panel.title : groupKey,
+      name: groupKey === '__default__' ? 'Measurement' : groupKey,
       symbolSize: markerSize,
       itemStyle: {
-        color: getColor(groupKey === '__default__' ? panel.title : groupKey),
+        color: getColor(groupKey),
         opacity: markerOpacity,
       },
       data: points
@@ -146,7 +164,10 @@ export default function FacetPanel({
         formatter: (params: { data?: { tooltipValues?: Array<{ label: string; value: unknown }> } }) => {
           const tooltipValues = params.data?.tooltipValues || [];
           return tooltipValues
-            .map(item => `<div><strong>${item.label}:</strong> ${item.value ?? ''}</div>`)
+            .map(
+              item =>
+                `<div><strong>${escapeHtml(item.label)}:</strong> ${escapeHtml(item.value)}</div>`,
+            )
             .join('');
         },
       },
@@ -157,7 +178,8 @@ export default function FacetPanel({
         nameGap: 28,
         axisLabel: {
           formatter: (value: number | string) =>
-            xAxisType === 'time' ? timeFormatter(value) : String(value),
+            xAxisType === 'time' ? formatTimeAxisValue(value, timeFormatter) : String(value),
+          hideOverlap: true,
         },
         splitLine: {
           show: false,
@@ -210,6 +232,7 @@ export default function FacetPanel({
         height,
         minHeight: 220,
         overflow: 'hidden',
+        boxShadow: 'inset 0 0 0 1px rgba(226, 232, 240, 0.45)',
       }}
     >
       <div ref={containerRef} style={{ height: '100%', width: '100%' }} />

@@ -2,251 +2,252 @@ import {
   ChartProps,
   ensureIsArray,
   getMetricLabel,
-  TimeseriesDataRecord,
 } from '@superset-ui/core';
+import type { QueryFormData, TimeseriesDataRecord } from '@superset-ui/core';
 import { getBalancedFacetLayout, sortFacetValues } from '../layout';
-import {
-  ColumnLike,
-  FacetPanelData,
+import type {
   FacetPoint,
+  FacetPanelData,
   SupersetPluginChartFacetedScatterSpcProps,
   SupersetPluginChartFacetedScatterSpcQueryFormData,
+  XAxisType,
 } from '../types';
+import {
+  getColumnLabel,
+  parseOptionalNumber,
+  parsePositiveInteger,
+  stringifyFacetValue,
+} from '../utils';
 
-function getColumnKey(column: ColumnLike | undefined): string {
-  if (!column) {
-    return '';
+function inferXAxisType(
+  xAxisLabel: string,
+  formData: SupersetPluginChartFacetedScatterSpcQueryFormData,
+  data: TimeseriesDataRecord[],
+): XAxisType {
+  if (formData.temporal_columns_lookup?.[xAxisLabel]) {
+    return 'time';
   }
 
-  if (typeof column === 'string') {
-    return column;
+  const sampleValues = data
+    .map(row => row[xAxisLabel])
+    .filter(value => value !== null && typeof value !== 'undefined')
+    .slice(0, 20);
+
+  if (
+    sampleValues.length &&
+    sampleValues.every(value => {
+      if (value instanceof Date) {
+        return true;
+      }
+
+      if (typeof value === 'number') {
+        return value > 100000000000;
+      }
+
+      return !Number.isNaN(Date.parse(String(value)));
+    })
+  ) {
+    return 'time';
   }
 
-  return String(column.label || column.column_name || column.sqlExpression || '');
-}
-
-function parseOptionalNumber(value: unknown) {
-  if (value === null || typeof value === 'undefined' || value === '') {
-    return null;
-  }
-
-  const numeric = Number(value);
-  return Number.isFinite(numeric) ? numeric : null;
-}
-
-function detectXAxisType(values: unknown[]): 'time' | 'value' | 'category' {
-  const firstValue = values.find(value => value !== null && typeof value !== 'undefined' && value !== '');
-
-  if (typeof firstValue === 'number') {
+  if (
+    sampleValues.length &&
+    sampleValues.every(value => {
+      const numeric = Number(value);
+      return Number.isFinite(numeric);
+    })
+  ) {
     return 'value';
-  }
-
-  if (firstValue instanceof Date) {
-    return 'time';
-  }
-
-  if (typeof firstValue === 'string' && !Number.isNaN(Date.parse(firstValue))) {
-    return 'time';
   }
 
   return 'category';
 }
 
-function buildTooltipValues(
-  row: TimeseriesDataRecord,
-  xAxisLabel: string,
-  yAxisLabel: string,
-  facetLabel: string,
-  facetValue: unknown,
-  colorLabel: string,
-  colorValue: unknown,
-  tooltipColumns: string[],
-) {
-  const values = [
-    { label: xAxisLabel, value: row[xAxisLabel] },
-    { label: facetLabel, value: facetValue },
-    { label: yAxisLabel, value: row[yAxisLabel] },
-  ];
-
-  if (colorLabel && colorValue != null) {
-    values.push({ label: colorLabel, value: colorValue });
-  }
-
-  tooltipColumns.forEach(column => {
-    if (![xAxisLabel, yAxisLabel, facetLabel, colorLabel].includes(column)) {
-      values.push({ label: column, value: row[column] });
-    }
-  });
-
-  return values;
-}
-
 function computeYDomain(
-  points: FacetPoint[],
-  lowerSpecLimit: number | null,
-  upperSpecLimit: number | null,
-  overrideMin: number | null,
-  overrideMax: number | null,
+  values: number[],
+  {
+    userMin,
+    userMax,
+    lowerSpecLimit,
+    upperSpecLimit,
+  }: {
+    userMin: number | null;
+    userMax: number | null;
+    lowerSpecLimit: number | null;
+    upperSpecLimit: number | null;
+  },
 ): [number, number] {
-  const values = points.map(point => point.y).filter(value => Number.isFinite(value));
+  const observed = [...values];
   if (lowerSpecLimit !== null) {
-    values.push(lowerSpecLimit);
+    observed.push(lowerSpecLimit);
   }
   if (upperSpecLimit !== null) {
-    values.push(upperSpecLimit);
+    observed.push(upperSpecLimit);
   }
 
-  let min = overrideMin;
-  let max = overrideMax;
+  const fallbackMin = observed.length ? Math.min(...observed) : 0;
+  const fallbackMax = observed.length ? Math.max(...observed) : 1;
+  let min = userMin ?? fallbackMin;
+  let max = userMax ?? fallbackMax;
 
-  if (min === null) {
-    min = values.length ? Math.min(...values) : 0;
+  if (min > max) {
+    [min, max] = [max, min];
   }
 
-  if (max === null) {
-    max = values.length ? Math.max(...values) : 1;
-  }
-
-  if (min === max) {
-    const padding = min === 0 ? 1 : Math.abs(min) * 0.05;
-    min -= padding;
-    max += padding;
-  } else if (overrideMin === null || overrideMax === null) {
-    const padding = (max - min) * 0.05;
-    if (overrideMin === null) {
+  if (userMin === null || userMax === null) {
+    const span = max - min;
+    const padding = span === 0 ? Math.max(Math.abs(max) * 0.05, 1) : span * 0.05;
+    if (userMin === null) {
       min -= padding;
     }
-    if (overrideMax === null) {
+    if (userMax === null) {
       max += padding;
     }
   }
 
+  if (min === max) {
+    const padding = Math.max(Math.abs(max) * 0.05, 1);
+    min -= padding;
+    max += padding;
+  }
+
   return [min, max];
+}
+
+function buildLegendValues(panels: FacetPanelData[]) {
+  return Array.from(
+    new Set(
+      panels.flatMap(panel =>
+        panel.points
+          .map(point => point.colorValue)
+          .filter((value): value is string => Boolean(value)),
+      ),
+    ),
+  );
 }
 
 export default function transformProps(
   chartProps: ChartProps,
 ): SupersetPluginChartFacetedScatterSpcProps {
   const { width, height, queriesData, formData } = chartProps;
-  const fd = formData as SupersetPluginChartFacetedScatterSpcQueryFormData;
-  const rows = (queriesData[0]?.data || []) as TimeseriesDataRecord[];
-  const xAxisLabel = getColumnKey(fd.x_axis);
-  const facetColumnLabel = getColumnKey(fd.facet_column);
-  const colorColumnLabel = getColumnKey(fd.color_column);
-  const tooltipColumns = ensureIsArray(fd.tooltip_columns)
-    .map(column => getColumnKey(column as ColumnLike))
-    .filter(Boolean);
-  const metricLabels = ensureIsArray(fd.metrics)
+  const rawFormData =
+    ((chartProps as unknown as { rawFormData?: QueryFormData }).rawFormData as
+      | SupersetPluginChartFacetedScatterSpcQueryFormData
+      | undefined) || (formData as SupersetPluginChartFacetedScatterSpcQueryFormData);
+  const data = (queriesData[0]?.data || []) as TimeseriesDataRecord[];
+  const metricLabels = ensureIsArray(rawFormData.metrics)
     .filter(Boolean)
-    .map(metric => getMetricLabel(metric as any));
-  const yAxisLabel = metricLabels[0] || getColumnKey(fd.y_axis_column);
-  const lowerSpecLimit = parseOptionalNumber(fd.lower_spec_limit);
-  const upperSpecLimit = parseOptionalNumber(fd.upper_spec_limit);
-  const yAxisMin = parseOptionalNumber(fd.y_axis_min);
-  const yAxisMax = parseOptionalNumber(fd.y_axis_max);
-  const maxFacets = Math.max(1, Number(fd.max_facets || 28));
-  const maxPanelsPerRow = Math.max(1, Number(fd.max_panels_per_row || 7));
-  const pointSize = Math.max(1, Number(fd.marker_size || 8));
-  const markerOpacity = Math.min(1, Math.max(0.05, Number(fd.marker_opacity || 0.85)));
-
-  const facetValues = sortFacetValues(
-    rows
-      .map(row => row[facetColumnLabel])
-      .filter(value => value !== null && typeof value !== 'undefined'),
-    fd.facet_sort_order || 'asc',
-    fd.facet_sort_custom,
+    .map(metric => getMetricLabel(metric as never))
+    .filter(Boolean);
+  const xAxisLabel = getColumnLabel(rawFormData.x_axis) ?? 'timestamp';
+  const yAxisLabel =
+    metricLabels[0] ?? getColumnLabel(rawFormData.y_axis_column) ?? 'value';
+  const facetColumnLabel = getColumnLabel(rawFormData.facet_column) ?? 'facet_value';
+  const colorColumnLabel = getColumnLabel(rawFormData.color_column);
+  const tooltipColumnLabels = ensureIsArray(rawFormData.tooltip_columns)
+    .map(column => getColumnLabel(column))
+    .filter((value): value is string => Boolean(value));
+  const maxFacets = parsePositiveInteger(rawFormData.max_facets, 28);
+  const maxPanelsPerRow = parsePositiveInteger(rawFormData.max_panels_per_row, 7, {
+    max: 7,
+  });
+  const markerSize = parsePositiveInteger(rawFormData.marker_size, 8);
+  const markerOpacity = Math.max(
+    0.1,
+    Math.min(1, parseOptionalNumber(rawFormData.marker_opacity, 0.8) ?? 0.8),
+  );
+  const lowerSpecLimit = parseOptionalNumber(rawFormData.lower_spec_limit);
+  const upperSpecLimit = parseOptionalNumber(rawFormData.upper_spec_limit);
+  const yAxisMin = parseOptionalNumber(rawFormData.y_axis_min);
+  const yAxisMax = parseOptionalNumber(rawFormData.y_axis_max);
+  const xAxisType = inferXAxisType(xAxisLabel, rawFormData, data);
+  const sortedFacetValues = sortFacetValues(
+    data.map(row => row[facetColumnLabel]),
+    rawFormData.facet_sort_order ?? 'asc',
+    rawFormData.facet_sort_custom,
   ).slice(0, maxFacets);
 
-  const allowedFacetValues = new Set(facetValues.map(value => String(value)));
-  const panelsByFacet = new Map<string, FacetPanelData>();
-  const points: FacetPoint[] = [];
+  const panels = sortedFacetValues
+    .map(facetValue => {
+      const points = data.reduce<FacetPoint[]>((accumulator, row) => {
+        if (String(row[facetColumnLabel]) !== String(facetValue)) {
+          return accumulator;
+        }
 
-  rows.forEach(row => {
-    const facetValue = row[facetColumnLabel];
-    if (facetValue === null || typeof facetValue === 'undefined') {
-      return;
-    }
+          const yValue = Number(row[yAxisLabel]);
+          if (!Number.isFinite(yValue)) {
+            return accumulator;
+          }
 
-    const facetKey = String(facetValue);
-    if (!allowedFacetValues.has(facetKey)) {
-      return;
-    }
+          accumulator.push({
+            x: row[xAxisLabel],
+            y: yValue,
+            facetValue,
+            colorValue:
+              colorColumnLabel && row[colorColumnLabel] != null
+                ? String(row[colorColumnLabel])
+                : undefined,
+            tooltipValues: [
+              { label: xAxisLabel, value: row[xAxisLabel] },
+              { label: facetColumnLabel, value: facetValue },
+              { label: yAxisLabel, value: row[yAxisLabel] },
+              ...(colorColumnLabel && row[colorColumnLabel] != null
+                ? [{ label: colorColumnLabel, value: row[colorColumnLabel] }]
+                : []),
+              ...tooltipColumnLabels
+                .filter(
+                  label =>
+                    ![xAxisLabel, facetColumnLabel, yAxisLabel, colorColumnLabel].includes(
+                      label,
+                    ),
+                )
+                .map(label => ({
+                  label,
+                  value: row[label],
+                })),
+            ],
+            row,
+          });
 
-    const yValue = Number(row[yAxisLabel]);
-    const xValue = row[xAxisLabel];
+        return accumulator;
+      }, []);
 
-    if (!Number.isFinite(yValue) || xValue === null || typeof xValue === 'undefined') {
-      return;
-    }
-
-    if (!panelsByFacet.has(facetKey)) {
-      panelsByFacet.set(facetKey, {
-        key: facetKey,
-        title: facetKey,
+      return {
+        key: stringifyFacetValue(facetValue),
+        title: stringifyFacetValue(facetValue),
         facetValue,
-        points: [],
-      });
-    }
-
-    const colorValue = colorColumnLabel ? row[colorColumnLabel] : undefined;
-    const point: FacetPoint = {
-      x: xValue,
-      y: yValue,
-      facetValue,
-      colorValue: colorValue == null ? undefined : String(colorValue),
-      tooltipValues: buildTooltipValues(
-        row,
-        xAxisLabel,
-        yAxisLabel,
-        facetColumnLabel,
-        facetValue,
-        colorColumnLabel,
-        colorValue,
-        tooltipColumns,
-      ),
-      row,
-    };
-
-    panelsByFacet.get(facetKey)?.points.push(point);
-    points.push(point);
-  });
-
-  const panels = facetValues
-    .map(value => panelsByFacet.get(String(value)))
-    .filter((panel): panel is FacetPanelData => Boolean(panel));
-  const xAxisType = detectXAxisType(points.map(point => point.x));
-  const legendValues = colorColumnLabel
-    ? sortFacetValues(
-        Array.from(
-          new Set(
-            points
-              .map(point => point.colorValue)
-              .filter((value): value is string => Boolean(value)),
-          ),
-        ),
-      )
-    : [];
+        points,
+      };
+    })
+    .filter(panel => panel.points.length);
+  const yValues = panels.flatMap(panel => panel.points.map(point => point.y));
 
   return {
     width,
     height,
-    chartTitle: fd.chart_title || 'Nest or Pallet #',
+    chartTitle: rawFormData.chart_title ?? '',
     xAxisLabel,
     yAxisLabel,
     facetColumnLabel,
-    colorColumnLabel: colorColumnLabel || undefined,
+    colorColumnLabel,
+    tooltipColumnLabels,
     panels,
     layout: getBalancedFacetLayout(panels.length, maxPanelsPerRow),
-    legendValues,
-    colorScheme: fd.color_scheme || 'supersetColors',
-    markerSize: pointSize,
+    legendValues: buildLegendValues(panels),
+    colorScheme: rawFormData.color_scheme ?? 'supersetColors',
+    markerSize,
     markerOpacity,
-    showLegend: fd.show_legend ?? true,
-    timeFormat: fd.time_format || 'smart_date',
-    yDomain: computeYDomain(points, lowerSpecLimit, upperSpecLimit, yAxisMin, yAxisMax),
+    showLegend: rawFormData.show_legend ?? true,
+    timeFormat: rawFormData.time_format ?? 'smart_date',
+    yDomain: computeYDomain(yValues, {
+      userMin: yAxisMin,
+      userMax: yAxisMax,
+      lowerSpecLimit,
+      upperSpecLimit,
+    }),
     upperSpecLimit,
     lowerSpecLimit,
-    panelGap: Math.max(0, Number(fd.panel_gap || 16)),
+    panelGap: parsePositiveInteger(rawFormData.panel_gap, 12),
     xAxisType,
   };
 }

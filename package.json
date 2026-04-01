@@ -1,5 +1,5 @@
 {
-  "name": "superset-plugin-chart-faceted-scatter-spc",
+  "name": "@pparth2302/superset-plugin-chart-faceted-scatter-spc",
   "version": "0.1.0",
   "description": "Apache Superset 6.0.0 plugin for faceted manufacturing SPC scatter charts built with ECharts.",
   "sideEffects": false,
@@ -23,6 +23,14 @@
     "ts-types": "tsc --build",
     "test": "jest"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pparth2302/superset-plugin-chart-faceted-scatter-spc.git"
+  },
+  "homepage": "https://github.com/pparth2302/superset-plugin-chart-faceted-scatter-spc#readme",
+  "bugs": {
+    "url": "https://github.com/pparth2302/superset-plugin-chart-faceted-scatter-spc/issues"
+  },
   "keywords": [
     "superset",
     "apache-superset",
@@ -34,7 +42,11 @@
     "quality"
   ],
   "author": "Parth Patel",
-  "license": "MIT",
+  "license": "Apache-2.0",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "public"
+  },
   "dependencies": {
     "echarts": "^5.6.0"
   },

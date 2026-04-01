@@ -2,7 +2,10 @@ import React, { useMemo } from 'react';
 import { CategoricalColorNamespace } from '@superset-ui/core';
 import { chunkFacetValuesIntoBalancedRows } from './layout';
 import FacetPanel from './FacetPanel';
-import { FacetPanelData, SupersetPluginChartFacetedScatterSpcProps } from './types';
+import type {
+  FacetPanelData,
+  SupersetPluginChartFacetedScatterSpcProps,
+} from './types';
 
 function buildLegendValues(panels: FacetPanelData[]) {
   return Array.from(
@@ -41,8 +44,13 @@ export default function FacetedScatterSpcChart({
   const rows = chunkFacetValuesIntoBalancedRows(panels, Math.max(layout.cols, 1));
   const titleHeight = chartTitle ? 28 : 0;
   const legendHeight = showLegend && effectiveLegendValues.length ? 34 : 0;
-  const availableHeight = Math.max(240, height - titleHeight - legendHeight - panelGap * Math.max(layout.rows - 1, 0));
-  const rowHeight = layout.rows ? Math.max(220, Math.floor(availableHeight / layout.rows)) : availableHeight;
+  const availableHeight = Math.max(
+    240,
+    height - titleHeight - legendHeight - panelGap * Math.max(layout.rows - 1, 0),
+  );
+  const rowHeight = layout.rows
+    ? Math.max(220, Math.floor(availableHeight / layout.rows))
+    : availableHeight;
 
   if (!panels.length) {
     return (
@@ -111,34 +119,36 @@ export default function FacetedScatterSpcChart({
           {yAxisLabel}
         </div>
         <div style={{ display: 'flex', flex: 1, flexDirection: 'column', gap: panelGap, minWidth: 0 }}>
-          {rows.map((rowPanels, rowIndex) => (
-            <div
-              key={`row-${rowIndex}`}
-              style={{
-                display: 'grid',
-                gap: panelGap,
-                gridTemplateColumns: `repeat(${rowPanels.length}, minmax(0, 1fr))`,
-              }}
-            >
-              {rowPanels.map(panel => (
-                <FacetPanel
-                  key={panel.key}
-                  panel={panel}
-                  height={rowHeight}
-                  xAxisType={xAxisType}
-                  xAxisLabel={xAxisLabel}
-                  yAxisLabel=""
-                  yDomain={yDomain}
-                  markerSize={markerSize}
-                  markerOpacity={markerOpacity}
-                  timeFormat={timeFormat}
-                  upperSpecLimit={upperSpecLimit}
-                  lowerSpecLimit={lowerSpecLimit}
-                  getColor={colorScale}
-                />
-              ))}
-            </div>
-          ))}
+          <div style={{ display: 'flex', flex: 1, flexDirection: 'column', gap: panelGap, overflow: 'auto' }}>
+            {rows.map((rowPanels, rowIndex) => (
+              <div
+                key={`row-${rowIndex}`}
+                style={{
+                  display: 'grid',
+                  gap: panelGap,
+                  gridTemplateColumns: `repeat(${rowPanels.length}, minmax(0, 1fr))`,
+                }}
+              >
+                {rowPanels.map(panel => (
+                  <FacetPanel
+                    key={panel.key}
+                    panel={panel}
+                    height={rowHeight}
+                    xAxisType={xAxisType}
+                    xAxisLabel={xAxisLabel}
+                    yAxisLabel=""
+                    yDomain={yDomain}
+                    markerSize={markerSize}
+                    markerOpacity={markerOpacity}
+                    timeFormat={timeFormat}
+                    upperSpecLimit={upperSpecLimit}
+                    lowerSpecLimit={lowerSpecLimit}
+                    getColor={colorScale}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
