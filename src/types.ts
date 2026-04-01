@@ -1,0 +1,91 @@
+import { QueryFormData, QueryFormMetric, TimeseriesDataRecord } from '@superset-ui/core';
+
+export type ColumnLike =
+  | string
+  | {
+      label?: string;
+      column_name?: string;
+      sqlExpression?: string;
+      expressionType?: string;
+    };
+
+export type FacetSortOrder = 'asc' | 'desc' | 'custom';
+
+export interface FacetPoint {
+  x: unknown;
+  y: number;
+  facetValue: unknown;
+  colorValue?: string;
+  tooltipValues: Array<{ label: string; value: unknown }>;
+  row: TimeseriesDataRecord;
+}
+
+export interface FacetPanelData {
+  key: string;
+  title: string;
+  facetValue: unknown;
+  points: FacetPoint[];
+}
+
+export interface FacetLayoutPosition {
+  index: number;
+  row: number;
+  col: number;
+}
+
+export interface BalancedFacetLayout {
+  rows: number;
+  cols: number;
+  rowCounts: number[];
+  positions: FacetLayoutPosition[];
+}
+
+export interface SupersetPluginChartFacetedScatterSpcQueryFormData
+  extends QueryFormData {
+  x_axis?: ColumnLike;
+  metrics?: QueryFormMetric[];
+  y_axis_column?: ColumnLike;
+  facet_column?: ColumnLike;
+  color_column?: ColumnLike;
+  tooltip_columns?: ColumnLike[];
+  chart_title?: string;
+  upper_spec_limit?: number | string | null;
+  lower_spec_limit?: number | string | null;
+  marker_size?: number | string;
+  marker_opacity?: number | string;
+  show_legend?: boolean;
+  time_format?: string;
+  y_axis_min?: number | string | null;
+  y_axis_max?: number | string | null;
+  facet_sort_order?: FacetSortOrder;
+  facet_sort_custom?: string;
+  max_facets?: number | string;
+  max_panels_per_row?: number | string;
+  panel_gap?: number | string;
+  tooltip_show_all?: boolean;
+  color_scheme?: string;
+  row_limit?: number | string;
+}
+
+export interface SupersetPluginChartFacetedScatterSpcProps {
+  width: number;
+  height: number;
+  chartTitle: string;
+  xAxisLabel: string;
+  yAxisLabel: string;
+  facetColumnLabel: string;
+  colorColumnLabel?: string;
+  panels: FacetPanelData[];
+  layout: BalancedFacetLayout;
+  legendValues: string[];
+  colorScheme: string;
+  markerSize: number;
+  markerOpacity: number;
+  showLegend: boolean;
+  timeFormat: string;
+  yDomain: [number, number];
+  upperSpecLimit: number | null;
+  lowerSpecLimit: number | null;
+  panelGap: number;
+  xAxisType: 'time' | 'value' | 'category';
+}
