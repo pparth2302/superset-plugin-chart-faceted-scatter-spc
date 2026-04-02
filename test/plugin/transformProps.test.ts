@@ -23,6 +23,8 @@ describe('transformProps', () => {
           facet_title_gap: 13,
           panel_padding: 10,
           left_outer_axis_padding: 20,
+          overall_chart_height: 1100,
+          overall_chart_width: 1600,
           row_gap: 18,
           column_gap: 3,
           enable_scroll_wheel_zoom: true,
@@ -83,6 +85,8 @@ describe('transformProps', () => {
     expect(props.facetTitleGap).toBe(13);
     expect(props.panelPadding).toBe(10);
     expect(props.leftOuterAxisPadding).toBe(20);
+    expect(props.overallChartHeight).toBe(1100);
+    expect(props.overallChartWidth).toBe(1600);
     expect(props.rowGap).toBe(18);
     expect(props.columnGap).toBe(3);
     expect(props.panels[0].points[0].tooltipValues[0]).toEqual({

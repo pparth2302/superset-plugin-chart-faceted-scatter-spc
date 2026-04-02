@@ -135,6 +135,26 @@ var controlPanel = {
         description: t('Extra left padding applied only to the first facet in each row before the visible Y-axis.')
       }
     }], [{
+      name: 'overall_chart_height',
+      config: {
+        type: 'TextControl',
+        label: t('Overall chart height'),
+        default: '',
+        isInt: true,
+        renderTrigger: true,
+        description: t('Optional total rendered chart height in pixels. If larger than the container, the chart scrolls vertically.')
+      }
+    }, {
+      name: 'overall_chart_width',
+      config: {
+        type: 'TextControl',
+        label: t('Overall chart width'),
+        default: '',
+        isInt: true,
+        renderTrigger: true,
+        description: t('Optional total rendered chart width in pixels. If larger than the container, the chart scrolls horizontally.')
+      }
+    }], [{
       name: 'row_gap',
       config: {
         type: 'TextControl',

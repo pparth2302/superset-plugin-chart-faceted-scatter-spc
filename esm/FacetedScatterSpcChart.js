@@ -32,6 +32,8 @@ export default function FacetedScatterSpcChart(_ref) {
     facetTitleGap,
     panelPadding,
     leftOuterAxisPadding,
+    overallChartHeight,
+    overallChartWidth,
     rowGap,
     columnGap,
     xAxisType
@@ -54,9 +56,11 @@ export default function FacetedScatterSpcChart(_ref) {
       };
     });
   }, [layout.positions, layout.rowCounts, panels]);
+  var contentWidth = overallChartWidth ? Math.max(width, overallChartWidth) : width;
+  var contentHeight = overallChartHeight ? Math.max(height, overallChartHeight) : height;
   var titleHeight = chartTitle ? 28 : 0;
   var legendHeight = showLegend && effectiveLegendValues.length ? 34 : 0;
-  var availableHeight = Math.max(240, height - titleHeight - legendHeight - rowGap * Math.max(layout.rows - 1, 0));
+  var availableHeight = Math.max(240, contentHeight - titleHeight - legendHeight - rowGap * Math.max(layout.rows - 1, 0));
   var rowHeight = layout.rows ? Math.max(220, Math.floor(availableHeight / layout.rows)) : availableHeight;
   if (!panels.length) {
     return /*#__PURE__*/React.createElement("div", {
@@ -75,10 +79,20 @@ export default function FacetedScatterSpcChart(_ref) {
       boxSizing: 'border-box',
       display: 'flex',
       flexDirection: 'column',
-      gap: 12,
       height,
+      width,
+      overflow: 'auto'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      boxSizing: 'border-box',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 12,
+      height: contentHeight,
+      minWidth: contentWidth,
       padding: 8,
-      width
+      width: contentWidth
     }
   }, chartTitle ? /*#__PURE__*/React.createElement("div", {
     style: {
@@ -145,7 +159,7 @@ export default function FacetedScatterSpcChart(_ref) {
       flex: 1,
       flexDirection: 'column',
       gap: rowGap,
-      overflow: 'auto'
+      minWidth: 0
     }
   }, rows.map(_ref2 => {
     var {
@@ -200,5 +214,5 @@ export default function FacetedScatterSpcChart(_ref) {
         getColor: colorScale
       });
     }));
-  })))));
+  }))))));
 }

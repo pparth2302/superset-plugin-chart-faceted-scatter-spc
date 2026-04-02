@@ -2,7 +2,7 @@ import _pt from "prop-types";
 function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 import React, { useEffect, useMemo, useRef } from 'react';
 import * as echarts from 'echarts';
-import { getNumberFormatter, getTimeFormatter } from '@superset-ui/core';
+import { getTimeFormatter } from '@superset-ui/core';
 function asXAxisValue(value, axisType) {
   if (axisType === 'time') {
     if (value instanceof Date) {
@@ -70,7 +70,6 @@ export default function FacetPanel(_ref) {
   } = _ref;
   var containerRef = useRef(null);
   var timeFormatter = useMemo(() => getTimeFormatter(timeFormat || 'smart_date'), [timeFormat]);
-  var numberFormatter = useMemo(() => getNumberFormatter('SMART_NUMBER'), []);
   useEffect(() => {
     if (!containerRef.current) {
       return undefined;
@@ -136,13 +135,7 @@ export default function FacetPanel(_ref) {
             width: 1.5
           },
           label: {
-            show: isFirstInRow,
-            formatter: _ref3 => {
-              var {
-                value
-              } = _ref3;
-              return numberFormatter(value);
-            }
+            show: false
           },
           data: [lowerSpecLimit !== null ? {
             yAxis: lowerSpecLimit
@@ -281,7 +274,7 @@ export default function FacetPanel(_ref) {
       chart.off('click', handleClick);
       chart.dispose();
     };
-  }, [columnGap, connectPanelsWithinRow, dataZoomGap, enableScrollWheelZoom, facetTitleGap, getColor, isFirstInRow, isLastInRow, leftOuterAxisPadding, lowerSpecLimit, markerOpacity, markerSize, numberFormatter, panel, panelPadding, rowCount, rowIndex, showDataZoomDetailText, showDataZoomSlider, timeFormatter, upperSpecLimit, xAxisLabelGap, xAxisLabel, xAxisType, yAxisLabelGap, yAxisLabel, yDomain, sharedZoom, selectedXKey, onZoomChange, onSelectionChange]);
+  }, [columnGap, connectPanelsWithinRow, dataZoomGap, enableScrollWheelZoom, facetTitleGap, getColor, isFirstInRow, isLastInRow, leftOuterAxisPadding, lowerSpecLimit, markerOpacity, markerSize, panel, panelPadding, rowCount, rowIndex, showDataZoomDetailText, showDataZoomSlider, timeFormatter, upperSpecLimit, xAxisLabelGap, xAxisLabel, xAxisType, yAxisLabelGap, yAxisLabel, yDomain, sharedZoom, selectedXKey, onZoomChange, onSelectionChange]);
   return /*#__PURE__*/React.createElement("div", {
     style: {
       background: '#ffffff',

@@ -126,6 +126,8 @@ export default function transformProps(chartProps) {
   var leftOuterAxisPadding = parsePositiveInteger(rawFormData.left_outer_axis_padding, 16, {
     min: 0
   });
+  var overallChartHeight = parseOptionalNumber(rawFormData.overall_chart_height);
+  var overallChartWidth = parseOptionalNumber(rawFormData.overall_chart_width);
   var rowGap = parsePositiveInteger(rawFormData.row_gap, sharedPanelGap, {
     min: 0
   });
@@ -222,6 +224,8 @@ export default function transformProps(chartProps) {
     facetTitleGap,
     panelPadding,
     leftOuterAxisPadding,
+    overallChartHeight,
+    overallChartWidth,
     rowGap,
     columnGap,
     xAxisType

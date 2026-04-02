@@ -78,6 +78,8 @@ export interface SupersetPluginChartFacetedScatterSpcQueryFormData
   facet_title_gap?: number | string;
   panel_padding?: number | string;
   left_outer_axis_padding?: number | string;
+  overall_chart_height?: number | string;
+  overall_chart_width?: number | string;
   row_gap?: number | string;
   column_gap?: number | string;
   upper_spec_limit?: number | string | null;
@@ -135,6 +137,8 @@ export interface SupersetPluginChartFacetedScatterSpcProps {
   facetTitleGap: number;
   panelPadding: number;
   leftOuterAxisPadding: number;
+  overallChartHeight: number | null;
+  overallChartWidth: number | null;
   rowGap: number;
   columnGap: number;
   xAxisType: XAxisType;

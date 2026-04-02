@@ -46,6 +46,8 @@ export default function FacetedScatterSpcChart({
   facetTitleGap,
   panelPadding,
   leftOuterAxisPadding,
+  overallChartHeight,
+  overallChartWidth,
   rowGap,
   columnGap,
   xAxisType,
@@ -68,11 +70,13 @@ export default function FacetedScatterSpcChart({
       };
     });
   }, [layout.positions, layout.rowCounts, panels]);
+  const contentWidth = overallChartWidth ? Math.max(width, overallChartWidth) : width;
+  const contentHeight = overallChartHeight ? Math.max(height, overallChartHeight) : height;
   const titleHeight = chartTitle ? 28 : 0;
   const legendHeight = showLegend && effectiveLegendValues.length ? 34 : 0;
   const availableHeight = Math.max(
     240,
-    height - titleHeight - legendHeight - rowGap * Math.max(layout.rows - 1, 0),
+    contentHeight - titleHeight - legendHeight - rowGap * Math.max(layout.rows - 1, 0),
   );
   const rowHeight = layout.rows
     ? Math.max(220, Math.floor(availableHeight / layout.rows))
@@ -101,35 +105,46 @@ export default function FacetedScatterSpcChart({
         boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
-        gap: 12,
         height,
-        padding: 8,
         width,
+        overflow: 'auto',
       }}
     >
-      {chartTitle ? (
-        <div style={{ color: '#0f172a', fontSize: 16, fontWeight: 700 }}>{chartTitle}</div>
-      ) : null}
-      {showLegend && effectiveLegendValues.length ? (
-        <div style={{ alignItems: 'center', display: 'flex', flexWrap: 'wrap', gap: 12 }}>
-          {effectiveLegendValues.map(value => (
-            <div key={value} style={{ alignItems: 'center', display: 'flex', gap: 6 }}>
-              <span
-                style={{
-                  background: colorScale(value),
-                  borderRadius: 999,
-                  display: 'inline-block',
-                  height: 10,
-                  width: 10,
-                }}
-              />
-              <span style={{ color: '#475569', fontSize: 12 }}>{value}</span>
-            </div>
-          ))}
-        </div>
-      ) : null}
-      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
-        <div
+      <div
+        style={{
+          boxSizing: 'border-box',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 12,
+          height: contentHeight,
+          minWidth: contentWidth,
+          padding: 8,
+          width: contentWidth,
+        }}
+      >
+        {chartTitle ? (
+          <div style={{ color: '#0f172a', fontSize: 16, fontWeight: 700 }}>{chartTitle}</div>
+        ) : null}
+        {showLegend && effectiveLegendValues.length ? (
+          <div style={{ alignItems: 'center', display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+            {effectiveLegendValues.map(value => (
+              <div key={value} style={{ alignItems: 'center', display: 'flex', gap: 6 }}>
+                <span
+                  style={{
+                    background: colorScale(value),
+                    borderRadius: 999,
+                    display: 'inline-block',
+                    height: 10,
+                    width: 10,
+                  }}
+                />
+                <span style={{ color: '#475569', fontSize: 12 }}>{value}</span>
+              </div>
+            ))}
+          </div>
+        ) : null}
+        <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+          <div
           style={{
             alignItems: 'center',
             color: '#334155',
@@ -144,59 +159,60 @@ export default function FacetedScatterSpcChart({
         >
           {yAxisLabel}
         </div>
-        <div style={{ display: 'flex', flex: 1, flexDirection: 'column', gap: rowGap, minWidth: 0 }}>
-          <div style={{ display: 'flex', flex: 1, flexDirection: 'column', gap: rowGap, overflow: 'auto' }}>
-            {rows.map(({ rowIndex, rowPanels }) => (
-              <div
-                key={`row-${rowIndex}`}
-                style={{
-                  display: 'grid',
-                  gap: columnGap,
-                  gridTemplateColumns: `repeat(${rowPanels.length}, minmax(0, 1fr))`,
-                }}
-              >
-                {rowPanels.map(({ panel, position }) => (
-                  <FacetPanel
-                    key={panel.key}
-                    panel={panel}
-                    height={rowHeight}
-                    rowIndex={rowIndex}
-                    rowCount={position?.rowCount ?? rowPanels.length}
-                    isFirstInRow={position?.isFirstInRow ?? false}
-                    isLastInRow={position?.isLastInRow ?? false}
-                    xAxisType={xAxisType}
-                    xAxisLabel={xAxisLabel}
-                    yAxisLabel=""
-                    yDomain={yDomain}
-                    markerSize={markerSize}
-                    markerOpacity={markerOpacity}
-                    timeFormat={timeFormat}
-                    upperSpecLimit={upperSpecLimit}
-                    lowerSpecLimit={lowerSpecLimit}
-                    enableScrollWheelZoom={enableScrollWheelZoom}
-                    showDataZoomSlider={showDataZoomSlider}
-                    showDataZoomDetailText={showDataZoomDetailText}
-                    connectPanelsWithinRow={connectPanelsWithinRow}
-                    yAxisLabelGap={yAxisLabelGap}
-                    xAxisLabelGap={xAxisLabelGap}
-                    dataZoomGap={dataZoomGap}
-                    facetTitleGap={facetTitleGap}
-                    panelPadding={panelPadding}
-                    leftOuterAxisPadding={leftOuterAxisPadding}
-                    columnGap={columnGap}
-                    sharedZoom={sharedZoom}
-                    selectedXKey={selectedXKey}
-                    onZoomChange={setSharedZoom}
-                    onSelectionChange={selectionKey =>
-                      setSelectedXKey(current =>
-                        current === selectionKey ? null : selectionKey,
-                      )
-                    }
-                    getColor={colorScale}
-                  />
-                ))}
-              </div>
-            ))}
+          <div style={{ display: 'flex', flex: 1, flexDirection: 'column', gap: rowGap, minWidth: 0 }}>
+            <div style={{ display: 'flex', flex: 1, flexDirection: 'column', gap: rowGap, minWidth: 0 }}>
+              {rows.map(({ rowIndex, rowPanels }) => (
+                <div
+                  key={`row-${rowIndex}`}
+                  style={{
+                    display: 'grid',
+                    gap: columnGap,
+                    gridTemplateColumns: `repeat(${rowPanels.length}, minmax(0, 1fr))`,
+                  }}
+                >
+                  {rowPanels.map(({ panel, position }) => (
+                    <FacetPanel
+                      key={panel.key}
+                      panel={panel}
+                      height={rowHeight}
+                      rowIndex={rowIndex}
+                      rowCount={position?.rowCount ?? rowPanels.length}
+                      isFirstInRow={position?.isFirstInRow ?? false}
+                      isLastInRow={position?.isLastInRow ?? false}
+                      xAxisType={xAxisType}
+                      xAxisLabel={xAxisLabel}
+                      yAxisLabel=""
+                      yDomain={yDomain}
+                      markerSize={markerSize}
+                      markerOpacity={markerOpacity}
+                      timeFormat={timeFormat}
+                      upperSpecLimit={upperSpecLimit}
+                      lowerSpecLimit={lowerSpecLimit}
+                      enableScrollWheelZoom={enableScrollWheelZoom}
+                      showDataZoomSlider={showDataZoomSlider}
+                      showDataZoomDetailText={showDataZoomDetailText}
+                      connectPanelsWithinRow={connectPanelsWithinRow}
+                      yAxisLabelGap={yAxisLabelGap}
+                      xAxisLabelGap={xAxisLabelGap}
+                      dataZoomGap={dataZoomGap}
+                      facetTitleGap={facetTitleGap}
+                      panelPadding={panelPadding}
+                      leftOuterAxisPadding={leftOuterAxisPadding}
+                      columnGap={columnGap}
+                      sharedZoom={sharedZoom}
+                      selectedXKey={selectedXKey}
+                      onZoomChange={setSharedZoom}
+                      onSelectionChange={selectionKey =>
+                        setSelectedXKey(current =>
+                          current === selectionKey ? null : selectionKey,
+                        )
+                      }
+                      getColor={colorScale}
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

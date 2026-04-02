@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import * as echarts from 'echarts';
-import { getNumberFormatter, getTimeFormatter } from '@superset-ui/core';
+import { getTimeFormatter } from '@superset-ui/core';
 import type { FacetPanelData, FacetZoomState } from './types';
 
 interface FacetPanelProps {
@@ -118,8 +118,6 @@ export default function FacetPanel({
 }: FacetPanelProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const timeFormatter = useMemo(() => getTimeFormatter(timeFormat || 'smart_date'), [timeFormat]);
-  const numberFormatter = useMemo(() => getNumberFormatter('SMART_NUMBER'), []);
-
   useEffect(() => {
     if (!containerRef.current) {
       return undefined;
@@ -205,8 +203,7 @@ export default function FacetPanel({
                 width: 1.5,
               },
               label: {
-                show: isFirstInRow,
-                formatter: ({ value }: { value: number }) => numberFormatter(value),
+                show: false,
               },
               data: [
                 lowerSpecLimit !== null ? { yAxis: lowerSpecLimit } : null,
@@ -400,7 +397,6 @@ export default function FacetPanel({
     lowerSpecLimit,
     markerOpacity,
     markerSize,
-    numberFormatter,
     panel,
     panelPadding,
     rowCount,

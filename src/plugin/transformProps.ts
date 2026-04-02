@@ -195,6 +195,8 @@ export default function transformProps(
   const leftOuterAxisPadding = parsePositiveInteger(rawFormData.left_outer_axis_padding, 16, {
     min: 0,
   });
+  const overallChartHeight = parseOptionalNumber(rawFormData.overall_chart_height);
+  const overallChartWidth = parseOptionalNumber(rawFormData.overall_chart_width);
   const rowGap = parsePositiveInteger(rawFormData.row_gap, sharedPanelGap, { min: 0 });
   const columnGap = parsePositiveInteger(rawFormData.column_gap, sharedPanelGap, { min: 0 });
   const enableScrollWheelZoom = rawFormData.enable_scroll_wheel_zoom ?? true;
@@ -306,6 +308,8 @@ export default function transformProps(
     facetTitleGap,
     panelPadding,
     leftOuterAxisPadding,
+    overallChartHeight,
+    overallChartWidth,
     rowGap,
     columnGap,
     xAxisType,
