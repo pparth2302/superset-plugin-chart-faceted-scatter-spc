@@ -38,6 +38,10 @@ export default function FacetPanel(_ref) {
   var {
     panel,
     height,
+    rowIndex,
+    rowCount,
+    isFirstInRow,
+    isLastInRow,
     xAxisType,
     xAxisLabel,
     yAxisLabel,
@@ -47,7 +51,17 @@ export default function FacetPanel(_ref) {
     timeFormat,
     upperSpecLimit,
     lowerSpecLimit,
-    showDataZoom,
+    enableScrollWheelZoom,
+    showDataZoomSlider,
+    showDataZoomDetailText,
+    connectPanelsWithinRow,
+    yAxisLabelGap,
+    xAxisLabelGap,
+    dataZoomGap,
+    facetTitleGap,
+    panelPadding,
+    leftOuterAxisPadding,
+    columnGap,
     sharedZoom,
     selectedXKey,
     onZoomChange,
@@ -62,6 +76,15 @@ export default function FacetPanel(_ref) {
       return undefined;
     }
     var chart = echarts.init(containerRef.current);
+    var sliderHeight = showDataZoomSlider ? 18 : 0;
+    var showRowYAxis = isFirstInRow || !connectPanelsWithinRow;
+    var topPadding = Math.max(8, panelPadding);
+    var titleTop = Math.max(6, Math.floor(panelPadding / 2));
+    var titleHeight = 16;
+    var gridTop = topPadding + titleHeight + facetTitleGap;
+    var gridBottom = Math.max(panelPadding + xAxisLabelGap + 24 + (showDataZoomSlider ? sliderHeight + dataZoomGap : 0), 32);
+    var gridLeft = showRowYAxis ? Math.max(panelPadding + yAxisLabelGap + 36 + (isFirstInRow ? leftOuterAxisPadding : 0), 52) : Math.max(panelPadding, connectPanelsWithinRow ? 6 : 12);
+    var gridRight = Math.max(panelPadding, connectPanelsWithinRow ? 8 : 12);
     var groupedPoints = panel.points.reduce((accumulator, point) => {
       var key = point.colorValue || '__default__';
       if (!accumulator[key]) {
@@ -113,7 +136,7 @@ export default function FacetPanel(_ref) {
             width: 1.5
           },
           label: {
-            show: true,
+            show: isFirstInRow,
             formatter: _ref3 => {
               var {
                 value
@@ -134,7 +157,7 @@ export default function FacetPanel(_ref) {
       title: {
         text: panel.title,
         left: 'center',
-        top: 6,
+        top: titleTop,
         textStyle: {
           fontSize: 12,
           fontWeight: 600,
@@ -142,10 +165,10 @@ export default function FacetPanel(_ref) {
         }
       },
       grid: {
-        top: 34,
-        right: 12,
-        bottom: 34,
-        left: 18,
+        top: gridTop,
+        right: gridRight,
+        bottom: gridBottom,
+        left: gridLeft,
         containLabel: true
       },
       tooltip: {
@@ -157,15 +180,16 @@ export default function FacetPanel(_ref) {
           return tooltipValues.map(item => "<div><strong>" + escapeHtml(item.label) + ":</strong> " + escapeHtml(item.value) + "</div>").join('');
         }
       },
-      toolbox: showDataZoom ? {
+      toolbox: showDataZoomSlider || enableScrollWheelZoom ? {
         right: 8,
         top: 4,
-        feature: {
+        feature: _extends({}, showDataZoomSlider || enableScrollWheelZoom ? {
           dataZoom: {
             yAxisIndex: 'none'
-          },
+          }
+        } : {}, {
           restore: {}
-        }
+        })
       } : undefined,
       xAxis: {
         type: xAxisType,
@@ -174,28 +198,48 @@ export default function FacetPanel(_ref) {
         nameGap: 28,
         axisLabel: {
           formatter: value => xAxisType === 'time' ? formatTimeAxisValue(value, timeFormatter) : String(value),
-          hideOverlap: true
+          hideOverlap: true,
+          margin: xAxisLabelGap
         },
         splitLine: {
-          show: false
+          show: true,
+          lineStyle: {
+            color: 'rgba(148, 163, 184, 0.18)'
+          }
         }
       },
-      dataZoom: showDataZoom ? [_extends({
+      dataZoom: enableScrollWheelZoom || showDataZoomSlider ? [...(enableScrollWheelZoom ? [_extends({
         type: 'inside',
         xAxisIndex: 0,
-        filterMode: 'filter'
-      }, sharedZoom || {}), _extends({
+        filterMode: 'filter',
+        zoomOnMouseWheel: true,
+        moveOnMouseMove: true,
+        moveOnMouseWheel: false
+      }, sharedZoom || {})] : []), ...(showDataZoomSlider ? [_extends({
         type: 'slider',
         xAxisIndex: 0,
         filterMode: 'filter',
-        height: 18,
-        bottom: 8
-      }, sharedZoom || {})] : undefined,
+        height: sliderHeight,
+        bottom: Math.max(panelPadding, 8),
+        showDetail: showDataZoomDetailText,
+        showDataShadow: false,
+        brushSelect: false
+      }, sharedZoom || {})] : [])] : undefined,
       yAxis: {
         type: 'value',
         name: yAxisLabel,
         min: yDomain[0],
         max: yDomain[1],
+        axisLine: {
+          show: showRowYAxis
+        },
+        axisTick: {
+          show: showRowYAxis
+        },
+        axisLabel: {
+          show: showRowYAxis,
+          margin: yAxisLabelGap
+        },
         splitLine: {
           show: true,
           lineStyle: {
@@ -237,17 +281,18 @@ export default function FacetPanel(_ref) {
       chart.off('click', handleClick);
       chart.dispose();
     };
-  }, [getColor, lowerSpecLimit, markerOpacity, markerSize, numberFormatter, panel, timeFormatter, upperSpecLimit, xAxisLabel, xAxisType, yAxisLabel, yDomain, showDataZoom, sharedZoom, selectedXKey, onZoomChange, onSelectionChange]);
+  }, [columnGap, connectPanelsWithinRow, dataZoomGap, enableScrollWheelZoom, facetTitleGap, getColor, isFirstInRow, isLastInRow, leftOuterAxisPadding, lowerSpecLimit, markerOpacity, markerSize, numberFormatter, panel, panelPadding, rowCount, rowIndex, showDataZoomDetailText, showDataZoomSlider, timeFormatter, upperSpecLimit, xAxisLabelGap, xAxisLabel, xAxisType, yAxisLabelGap, yAxisLabel, yDomain, sharedZoom, selectedXKey, onZoomChange, onSelectionChange]);
   return /*#__PURE__*/React.createElement("div", {
     style: {
       background: '#ffffff',
       border: '1px solid #dbe2ea',
-      borderRadius: 10,
+      borderLeftWidth: connectPanelsWithinRow && !isFirstInRow && columnGap === 0 ? 0 : 1,
+      borderRadius: connectPanelsWithinRow ? (isFirstInRow ? 10 : 0) + "px " + (isLastInRow ? 10 : 0) + "px " + (isLastInRow ? 10 : 0) + "px " + (isFirstInRow ? 10 : 0) + "px" : 10,
       boxSizing: 'border-box',
       height,
       minHeight: 220,
       overflow: 'hidden',
-      boxShadow: 'inset 0 0 0 1px rgba(226, 232, 240, 0.45)'
+      boxShadow: connectPanelsWithinRow && !isFirstInRow ? 'inset 1px 0 0 rgba(226, 232, 240, 0.8)' : 'inset 0 0 0 1px rgba(226, 232, 240, 0.45)'
     }
   }, /*#__PURE__*/React.createElement("div", {
     ref: containerRef,
@@ -260,6 +305,10 @@ export default function FacetPanel(_ref) {
 FacetPanel.propTypes = {
   width: _pt.number,
   height: _pt.number.isRequired,
+  rowIndex: _pt.number.isRequired,
+  rowCount: _pt.number.isRequired,
+  isFirstInRow: _pt.bool.isRequired,
+  isLastInRow: _pt.bool.isRequired,
   xAxisType: _pt.oneOf(['time', 'value', 'category']).isRequired,
   xAxisLabel: _pt.string.isRequired,
   yAxisLabel: _pt.string.isRequired,
@@ -268,9 +317,15 @@ FacetPanel.propTypes = {
   timeFormat: _pt.string.isRequired,
   upperSpecLimit: _pt.oneOfType([_pt.number, _pt.oneOf([null])]),
   lowerSpecLimit: _pt.oneOfType([_pt.number, _pt.oneOf([null])]),
-  showDataZoom: _pt.bool.isRequired,
-  selectedXKey: _pt.oneOfType([_pt.string, _pt.oneOf([null])]),
-  onZoomChange: _pt.func.isRequired,
-  onSelectionChange: _pt.func.isRequired,
-  getColor: _pt.func.isRequired
+  enableScrollWheelZoom: _pt.bool.isRequired,
+  showDataZoomSlider: _pt.bool.isRequired,
+  showDataZoomDetailText: _pt.bool.isRequired,
+  connectPanelsWithinRow: _pt.bool.isRequired,
+  yAxisLabelGap: _pt.number.isRequired,
+  xAxisLabelGap: _pt.number.isRequired,
+  dataZoomGap: _pt.number.isRequired,
+  facetTitleGap: _pt.number.isRequired,
+  panelPadding: _pt.number.isRequired,
+  leftOuterAxisPadding: _pt.number.isRequired,
+  columnGap: _pt.number.isRequired
 };

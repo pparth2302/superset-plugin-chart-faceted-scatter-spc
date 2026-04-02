@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
 import { CategoricalColorNamespace } from '@superset-ui/core';
-import { chunkFacetValuesIntoBalancedRows } from './layout';
 import FacetPanel from './FacetPanel';
 function buildLegendValues(panels) {
   return Array.from(new Set(panels.flatMap(panel => panel.points.map(point => point.colorValue).filter(value => Boolean(value)))));
@@ -19,22 +18,45 @@ export default function FacetedScatterSpcChart(_ref) {
     markerSize,
     markerOpacity,
     showLegend,
-    showDataZoom,
+    enableScrollWheelZoom,
+    showDataZoomSlider,
+    showDataZoomDetailText,
+    connectPanelsWithinRow,
     timeFormat,
     yDomain,
     upperSpecLimit,
     lowerSpecLimit,
-    panelGap,
+    yAxisLabelGap,
+    xAxisLabelGap,
+    dataZoomGap,
+    facetTitleGap,
+    panelPadding,
+    leftOuterAxisPadding,
+    rowGap,
+    columnGap,
     xAxisType
   } = _ref;
   var colorScale = useMemo(() => CategoricalColorNamespace.getScale(colorScheme), [colorScheme]);
   var effectiveLegendValues = legendValues.length ? legendValues : buildLegendValues(panels);
-  var rows = chunkFacetValuesIntoBalancedRows(panels, Math.max(layout.cols, 1));
   var [sharedZoom, setSharedZoom] = useState(null);
   var [selectedXKey, setSelectedXKey] = useState(null);
+  var rows = useMemo(() => {
+    var cursor = 0;
+    return layout.rowCounts.map((rowCount, rowIndex) => {
+      var rowPanels = panels.slice(cursor, cursor + rowCount).map((panel, colIndex) => ({
+        panel,
+        position: layout.positions[cursor + colIndex]
+      }));
+      cursor += rowCount;
+      return {
+        rowIndex,
+        rowPanels
+      };
+    });
+  }, [layout.positions, layout.rowCounts, panels]);
   var titleHeight = chartTitle ? 28 : 0;
   var legendHeight = showLegend && effectiveLegendValues.length ? 34 : 0;
-  var availableHeight = Math.max(240, height - titleHeight - legendHeight - panelGap * Math.max(layout.rows - 1, 0));
+  var availableHeight = Math.max(240, height - titleHeight - legendHeight - rowGap * Math.max(layout.rows - 1, 0));
   var rowHeight = layout.rows ? Math.max(220, Math.floor(availableHeight / layout.rows)) : availableHeight;
   if (!panels.length) {
     return /*#__PURE__*/React.createElement("div", {
@@ -114,7 +136,7 @@ export default function FacetedScatterSpcChart(_ref) {
       display: 'flex',
       flex: 1,
       flexDirection: 'column',
-      gap: panelGap,
+      gap: rowGap,
       minWidth: 0
     }
   }, /*#__PURE__*/React.createElement("div", {
@@ -122,34 +144,61 @@ export default function FacetedScatterSpcChart(_ref) {
       display: 'flex',
       flex: 1,
       flexDirection: 'column',
-      gap: panelGap,
+      gap: rowGap,
       overflow: 'auto'
     }
-  }, rows.map((rowPanels, rowIndex) => /*#__PURE__*/React.createElement("div", {
-    key: "row-" + rowIndex,
-    style: {
-      display: 'grid',
-      gap: panelGap,
-      gridTemplateColumns: "repeat(" + rowPanels.length + ", minmax(0, 1fr))"
-    }
-  }, rowPanels.map(panel => /*#__PURE__*/React.createElement(FacetPanel, {
-    key: panel.key,
-    panel: panel,
-    height: rowHeight,
-    xAxisType: xAxisType,
-    xAxisLabel: xAxisLabel,
-    yAxisLabel: "",
-    yDomain: yDomain,
-    markerSize: markerSize,
-    markerOpacity: markerOpacity,
-    timeFormat: timeFormat,
-    upperSpecLimit: upperSpecLimit,
-    lowerSpecLimit: lowerSpecLimit,
-    showDataZoom: showDataZoom,
-    sharedZoom: sharedZoom,
-    selectedXKey: selectedXKey,
-    onZoomChange: setSharedZoom,
-    onSelectionChange: selectionKey => setSelectedXKey(current => current === selectionKey ? null : selectionKey),
-    getColor: colorScale
-  }))))))));
+  }, rows.map(_ref2 => {
+    var {
+      rowIndex,
+      rowPanels
+    } = _ref2;
+    return /*#__PURE__*/React.createElement("div", {
+      key: "row-" + rowIndex,
+      style: {
+        display: 'grid',
+        gap: columnGap,
+        gridTemplateColumns: "repeat(" + rowPanels.length + ", minmax(0, 1fr))"
+      }
+    }, rowPanels.map(_ref3 => {
+      var _position$rowCount, _position$isFirstInRo, _position$isLastInRow;
+      var {
+        panel,
+        position
+      } = _ref3;
+      return /*#__PURE__*/React.createElement(FacetPanel, {
+        key: panel.key,
+        panel: panel,
+        height: rowHeight,
+        rowIndex: rowIndex,
+        rowCount: (_position$rowCount = position == null ? void 0 : position.rowCount) != null ? _position$rowCount : rowPanels.length,
+        isFirstInRow: (_position$isFirstInRo = position == null ? void 0 : position.isFirstInRow) != null ? _position$isFirstInRo : false,
+        isLastInRow: (_position$isLastInRow = position == null ? void 0 : position.isLastInRow) != null ? _position$isLastInRow : false,
+        xAxisType: xAxisType,
+        xAxisLabel: xAxisLabel,
+        yAxisLabel: "",
+        yDomain: yDomain,
+        markerSize: markerSize,
+        markerOpacity: markerOpacity,
+        timeFormat: timeFormat,
+        upperSpecLimit: upperSpecLimit,
+        lowerSpecLimit: lowerSpecLimit,
+        enableScrollWheelZoom: enableScrollWheelZoom,
+        showDataZoomSlider: showDataZoomSlider,
+        showDataZoomDetailText: showDataZoomDetailText,
+        connectPanelsWithinRow: connectPanelsWithinRow,
+        yAxisLabelGap: yAxisLabelGap,
+        xAxisLabelGap: xAxisLabelGap,
+        dataZoomGap: dataZoomGap,
+        facetTitleGap: facetTitleGap,
+        panelPadding: panelPadding,
+        leftOuterAxisPadding: leftOuterAxisPadding,
+        columnGap: columnGap,
+        sharedZoom: sharedZoom,
+        selectedXKey: selectedXKey,
+        onZoomChange: setSharedZoom,
+        onSelectionChange: selectionKey => setSelectedXKey(current => current === selectionKey ? null : selectionKey),
+        getColor: colorScale
+      });
+    }));
+  })))));
 }

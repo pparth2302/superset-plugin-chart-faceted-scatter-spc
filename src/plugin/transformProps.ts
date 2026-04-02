@@ -172,6 +172,7 @@ export default function transformProps(
   const tooltipColumnLabels = ensureIsArray(rawFormData.tooltip_columns)
     .map(column => getColumnLabel(column))
     .filter((value): value is string => Boolean(value));
+  const yFieldKey = metricLabels[0] ?? getColumnLabel(rawFormData.y_axis_column) ?? 'value';
   const maxFacets = parsePositiveInteger(rawFormData.max_facets, 28);
   const maxPanelsPerRow = parsePositiveInteger(rawFormData.max_panels_per_row, 7, {
     max: 7,
@@ -185,6 +186,22 @@ export default function transformProps(
   const upperSpecLimit = parseOptionalNumber(rawFormData.upper_spec_limit);
   const yAxisMin = parseOptionalNumber(rawFormData.y_axis_min);
   const yAxisMax = parseOptionalNumber(rawFormData.y_axis_max);
+  const sharedPanelGap = parsePositiveInteger(rawFormData.panel_gap, 12);
+  const yAxisLabelGap = parsePositiveInteger(rawFormData.y_axis_label_gap, 12, { min: 0 });
+  const xAxisLabelGap = parsePositiveInteger(rawFormData.x_axis_label_gap, 10, { min: 0 });
+  const dataZoomGap = parsePositiveInteger(rawFormData.data_zoom_gap, 10, { min: 0 });
+  const facetTitleGap = parsePositiveInteger(rawFormData.facet_title_gap, 12, { min: 0 });
+  const panelPadding = parsePositiveInteger(rawFormData.panel_padding, 12, { min: 0 });
+  const leftOuterAxisPadding = parsePositiveInteger(rawFormData.left_outer_axis_padding, 16, {
+    min: 0,
+  });
+  const rowGap = parsePositiveInteger(rawFormData.row_gap, sharedPanelGap, { min: 0 });
+  const columnGap = parsePositiveInteger(rawFormData.column_gap, sharedPanelGap, { min: 0 });
+  const enableScrollWheelZoom = rawFormData.enable_scroll_wheel_zoom ?? true;
+  const showDataZoomSlider =
+    rawFormData.show_data_zoom_slider ?? rawFormData.show_data_zoom ?? true;
+  const showDataZoomDetailText = rawFormData.show_data_zoom_detail_text ?? false;
+  const connectPanelsWithinRow = rawFormData.connect_panels_within_row ?? true;
   const xAxisType = inferXAxisType(xAxisLabel, rawFormData, data);
   const tooltipTimeFormat = rawFormData.tooltip_time_format ?? '%m-%d-%Y %I:%M:%S %p';
   const tooltipTimeFormatter = getTimeFormatter(tooltipTimeFormat);
@@ -201,7 +218,6 @@ export default function transformProps(
           return accumulator;
         }
 
-        const yFieldKey = metricLabels[0] ?? getColumnLabel(rawFormData.y_axis_column) ?? 'value';
         const yValue = Number(row[yFieldKey]);
         if (!Number.isFinite(yValue)) {
           return accumulator;
@@ -270,7 +286,10 @@ export default function transformProps(
     markerSize,
     markerOpacity,
     showLegend: rawFormData.show_legend ?? true,
-    showDataZoom: rawFormData.show_data_zoom ?? true,
+    enableScrollWheelZoom,
+    showDataZoomSlider,
+    showDataZoomDetailText,
+    connectPanelsWithinRow,
     timeFormat: rawFormData.time_format ?? 'smart_date',
     tooltipTimeFormat,
     yDomain: computeYDomain(yValues, {
@@ -281,7 +300,14 @@ export default function transformProps(
     }),
     upperSpecLimit,
     lowerSpecLimit,
-    panelGap: parsePositiveInteger(rawFormData.panel_gap, 12),
+    yAxisLabelGap,
+    xAxisLabelGap,
+    dataZoomGap,
+    facetTitleGap,
+    panelPadding,
+    leftOuterAxisPadding,
+    rowGap,
+    columnGap,
     xAxisType,
   };
 }

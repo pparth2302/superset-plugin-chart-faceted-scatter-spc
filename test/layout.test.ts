@@ -12,6 +12,20 @@ describe('layout helpers', () => {
     ]);
     expect(getBalancedFacetLayout(11, 7).rowCounts).toEqual([6, 5]);
     expect(getBalancedFacetLayout(15, 7).rowCounts).toEqual([5, 5, 5]);
+    expect(getBalancedFacetLayout(8, 7).positions[0]).toMatchObject({
+      row: 0,
+      col: 0,
+      rowCount: 4,
+      isFirstInRow: true,
+      isLastInRow: false,
+    });
+    expect(getBalancedFacetLayout(8, 7).positions[3]).toMatchObject({
+      row: 0,
+      col: 3,
+      rowCount: 4,
+      isFirstInRow: false,
+      isLastInRow: true,
+    });
   });
 
   it('sorts facet values numerically and honors custom order', () => {

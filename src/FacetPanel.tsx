@@ -7,6 +7,10 @@ interface FacetPanelProps {
   panel: FacetPanelData;
   width?: number;
   height: number;
+  rowIndex: number;
+  rowCount: number;
+  isFirstInRow: boolean;
+  isLastInRow: boolean;
   xAxisType: 'time' | 'value' | 'category';
   xAxisLabel: string;
   yAxisLabel: string;
@@ -16,7 +20,17 @@ interface FacetPanelProps {
   timeFormat: string;
   upperSpecLimit: number | null;
   lowerSpecLimit: number | null;
-  showDataZoom: boolean;
+  enableScrollWheelZoom: boolean;
+  showDataZoomSlider: boolean;
+  showDataZoomDetailText: boolean;
+  connectPanelsWithinRow: boolean;
+  yAxisLabelGap: number;
+  xAxisLabelGap: number;
+  dataZoomGap: number;
+  facetTitleGap: number;
+  panelPadding: number;
+  leftOuterAxisPadding: number;
+  columnGap: number;
   sharedZoom: FacetZoomState | null;
   selectedXKey: string | null;
   onZoomChange: (zoom: FacetZoomState | null) => void;
@@ -72,6 +86,10 @@ function getSelectionKey(value: unknown, axisType: FacetPanelProps['xAxisType'])
 export default function FacetPanel({
   panel,
   height,
+  rowIndex,
+  rowCount,
+  isFirstInRow,
+  isLastInRow,
   xAxisType,
   xAxisLabel,
   yAxisLabel,
@@ -81,7 +99,17 @@ export default function FacetPanel({
   timeFormat,
   upperSpecLimit,
   lowerSpecLimit,
-  showDataZoom,
+  enableScrollWheelZoom,
+  showDataZoomSlider,
+  showDataZoomDetailText,
+  connectPanelsWithinRow,
+  yAxisLabelGap,
+  xAxisLabelGap,
+  dataZoomGap,
+  facetTitleGap,
+  panelPadding,
+  leftOuterAxisPadding,
+  columnGap,
   sharedZoom,
   selectedXKey,
   onZoomChange,
@@ -98,6 +126,20 @@ export default function FacetPanel({
     }
 
     const chart = echarts.init(containerRef.current);
+    const sliderHeight = showDataZoomSlider ? 18 : 0;
+    const showRowYAxis = isFirstInRow || !connectPanelsWithinRow;
+    const topPadding = Math.max(8, panelPadding);
+    const titleTop = Math.max(6, Math.floor(panelPadding / 2));
+    const titleHeight = 16;
+    const gridTop = topPadding + titleHeight + facetTitleGap;
+    const gridBottom = Math.max(
+      panelPadding + xAxisLabelGap + 24 + (showDataZoomSlider ? sliderHeight + dataZoomGap : 0),
+      32,
+    );
+    const gridLeft = showRowYAxis
+      ? Math.max(panelPadding + yAxisLabelGap + 36 + (isFirstInRow ? leftOuterAxisPadding : 0), 52)
+      : Math.max(panelPadding, connectPanelsWithinRow ? 6 : 12);
+    const gridRight = Math.max(panelPadding, connectPanelsWithinRow ? 8 : 12);
     const groupedPoints = panel.points.reduce<Record<string, typeof panel.points>>((accumulator, point) => {
       const key = point.colorValue || '__default__';
       if (!accumulator[key]) {
@@ -163,7 +205,7 @@ export default function FacetPanel({
                 width: 1.5,
               },
               label: {
-                show: true,
+                show: isFirstInRow,
                 formatter: ({ value }: { value: number }) => numberFormatter(value),
               },
               data: [
@@ -179,7 +221,7 @@ export default function FacetPanel({
       title: {
         text: panel.title,
         left: 'center',
-        top: 6,
+        top: titleTop,
         textStyle: {
           fontSize: 12,
           fontWeight: 600,
@@ -187,10 +229,10 @@ export default function FacetPanel({
         },
       },
       grid: {
-        top: 34,
-        right: 12,
-        bottom: 34,
-        left: 18,
+        top: gridTop,
+        right: gridRight,
+        bottom: gridBottom,
+        left: gridLeft,
         containLabel: true,
       },
       tooltip: {
@@ -206,14 +248,18 @@ export default function FacetPanel({
             .join('');
         },
       },
-      toolbox: showDataZoom
+      toolbox: showDataZoomSlider || enableScrollWheelZoom
         ? {
             right: 8,
             top: 4,
             feature: {
-              dataZoom: {
-                yAxisIndex: 'none',
-              },
+              ...(showDataZoomSlider || enableScrollWheelZoom
+                ? {
+                    dataZoom: {
+                      yAxisIndex: 'none',
+                    },
+                  }
+                : {}),
               restore: {},
             },
           }
@@ -227,27 +273,45 @@ export default function FacetPanel({
           formatter: (value: number | string) =>
             xAxisType === 'time' ? formatTimeAxisValue(value, timeFormatter) : String(value),
           hideOverlap: true,
+          margin: xAxisLabelGap,
         },
         splitLine: {
-          show: false,
+          show: true,
+          lineStyle: {
+            color: 'rgba(148, 163, 184, 0.18)',
+          },
         },
       },
-      dataZoom: showDataZoom
+      dataZoom: enableScrollWheelZoom || showDataZoomSlider
         ? [
-            {
-              type: 'inside',
-              xAxisIndex: 0,
-              filterMode: 'filter',
-              ...(sharedZoom || {}),
-            },
-            {
-              type: 'slider',
-              xAxisIndex: 0,
-              filterMode: 'filter',
-              height: 18,
-              bottom: 8,
-              ...(sharedZoom || {}),
-            },
+            ...(enableScrollWheelZoom
+              ? [
+                  {
+                    type: 'inside',
+                    xAxisIndex: 0,
+                    filterMode: 'filter',
+                    zoomOnMouseWheel: true,
+                    moveOnMouseMove: true,
+                    moveOnMouseWheel: false,
+                    ...(sharedZoom || {}),
+                  },
+                ]
+              : []),
+            ...(showDataZoomSlider
+              ? [
+                  {
+                    type: 'slider',
+                    xAxisIndex: 0,
+                    filterMode: 'filter',
+                    height: sliderHeight,
+                    bottom: Math.max(panelPadding, 8),
+                    showDetail: showDataZoomDetailText,
+                    showDataShadow: false,
+                    brushSelect: false,
+                    ...(sharedZoom || {}),
+                  },
+                ]
+              : []),
           ]
         : undefined,
       yAxis: {
@@ -255,6 +319,16 @@ export default function FacetPanel({
         name: yAxisLabel,
         min: yDomain[0],
         max: yDomain[1],
+        axisLine: {
+          show: showRowYAxis,
+        },
+        axisTick: {
+          show: showRowYAxis,
+        },
+        axisLabel: {
+          show: showRowYAxis,
+          margin: yAxisLabelGap,
+        },
         splitLine: {
           show: true,
           lineStyle: {
@@ -314,19 +388,33 @@ export default function FacetPanel({
       chart.dispose();
     };
   }, [
+    columnGap,
+    connectPanelsWithinRow,
+    dataZoomGap,
+    enableScrollWheelZoom,
+    facetTitleGap,
     getColor,
+    isFirstInRow,
+    isLastInRow,
+    leftOuterAxisPadding,
     lowerSpecLimit,
     markerOpacity,
     markerSize,
     numberFormatter,
     panel,
+    panelPadding,
+    rowCount,
+    rowIndex,
+    showDataZoomDetailText,
+    showDataZoomSlider,
     timeFormatter,
     upperSpecLimit,
+    xAxisLabelGap,
     xAxisLabel,
     xAxisType,
+    yAxisLabelGap,
     yAxisLabel,
     yDomain,
-    showDataZoom,
     sharedZoom,
     selectedXKey,
     onZoomChange,
@@ -338,12 +426,20 @@ export default function FacetPanel({
       style={{
         background: '#ffffff',
         border: '1px solid #dbe2ea',
-        borderRadius: 10,
+        borderLeftWidth: connectPanelsWithinRow && !isFirstInRow && columnGap === 0 ? 0 : 1,
+        borderRadius: connectPanelsWithinRow
+          ? `${isFirstInRow ? 10 : 0}px ${isLastInRow ? 10 : 0}px ${isLastInRow ? 10 : 0}px ${
+              isFirstInRow ? 10 : 0
+            }px`
+          : 10,
         boxSizing: 'border-box',
         height,
         minHeight: 220,
         overflow: 'hidden',
-        boxShadow: 'inset 0 0 0 1px rgba(226, 232, 240, 0.45)',
+        boxShadow:
+          connectPanelsWithinRow && !isFirstInRow
+            ? 'inset 1px 0 0 rgba(226, 232, 240, 0.8)'
+            : 'inset 0 0 0 1px rgba(226, 232, 240, 0.45)',
       }}
     >
       <div ref={containerRef} style={{ height: '100%', width: '100%' }} />

@@ -54,7 +54,7 @@ var controlPanel = {
   }), _extends({}, sections.annotationsAndLayersControls, {
     tabOverride: 'data'
   }), {
-    label: t('Chart'),
+    label: t('Display'),
     expanded: true,
     tabOverride: 'customize',
     controlSetRows: [[{
@@ -84,6 +84,74 @@ var controlPanel = {
         renderTrigger: true,
         description: t('Custom shared Y-axis label shown at the left of the facet grid.')
       }
+    }], [{
+      name: 'y_axis_label_gap',
+      config: {
+        type: 'TextControl',
+        label: t('Y-axis label gap'),
+        default: 12,
+        isInt: true,
+        renderTrigger: true,
+        description: t('Space between Y-axis ticks/labels and the plot area.')
+      }
+    }, {
+      name: 'x_axis_label_gap',
+      config: {
+        type: 'TextControl',
+        label: t('X-axis label gap'),
+        default: 10,
+        isInt: true,
+        renderTrigger: true,
+        description: t('Space between X-axis ticks/labels and the plot area.')
+      }
+    }], [{
+      name: 'facet_title_gap',
+      config: {
+        type: 'TextControl',
+        label: t('Facet title gap'),
+        default: 12,
+        isInt: true,
+        renderTrigger: true,
+        description: t('Space between the facet title and the plot area.')
+      }
+    }, {
+      name: 'panel_padding',
+      config: {
+        type: 'TextControl',
+        label: t('Panel padding'),
+        default: 12,
+        isInt: true,
+        renderTrigger: true,
+        description: t('Internal padding used around each facet chart.')
+      }
+    }], [{
+      name: 'left_outer_axis_padding',
+      config: {
+        type: 'TextControl',
+        label: t('Left outer axis padding'),
+        default: 16,
+        isInt: true,
+        renderTrigger: true,
+        description: t('Extra left padding applied only to the first facet in each row before the visible Y-axis.')
+      }
+    }], [{
+      name: 'row_gap',
+      config: {
+        type: 'TextControl',
+        label: t('Row gap'),
+        default: 16,
+        isInt: true,
+        renderTrigger: true
+      }
+    }, {
+      name: 'column_gap',
+      config: {
+        type: 'TextControl',
+        label: t('Column gap'),
+        default: 2,
+        isInt: true,
+        renderTrigger: true
+      }
     }], ['color_scheme'], [{
       name: 'show_legend',
       config: {
@@ -93,12 +161,46 @@ var controlPanel = {
         renderTrigger: true
       }
     }, {
-      name: 'show_data_zoom',
+      name: 'enable_scroll_wheel_zoom',
       config: {
         type: 'CheckboxControl',
-        label: t('Show data zoom'),
+        label: t('Enable scroll wheel zoom'),
         default: true,
         renderTrigger: true
+      }
+    }, {
+      name: 'connect_panels_within_row',
+      config: {
+        type: 'CheckboxControl',
+        label: t('Connect panels within row'),
+        default: true,
+        renderTrigger: true
+      }
+    }], [{
+      name: 'show_data_zoom_slider',
+      config: {
+        type: 'CheckboxControl',
+        label: t('Show data zoom slider'),
+        default: true,
+        renderTrigger: true
+      }
+    }, {
+      name: 'show_data_zoom_detail_text',
+      config: {
+        type: 'CheckboxControl',
+        label: t('Show data zoom detail text'),
+        default: false,
+        renderTrigger: true
+      }
+    }], [{
+      name: 'data_zoom_gap',
+      config: {
+        type: 'TextControl',
+        label: t('Data zoom gap'),
+        default: 10,
+        isInt: true,
+        renderTrigger: true,
+        description: t('Space between the x-axis area and the data zoom slider.')
       }
     }], [{
       name: 'time_format',
@@ -192,15 +294,6 @@ var controlPanel = {
         isInt: true,
         renderTrigger: true,
         description: t('Balanced layout is enforced and the value is capped at seven.')
-      }
-    }], [{
-      name: 'panel_gap',
-      config: {
-        type: 'TextControl',
-        label: t('Panel gap'),
-        default: 12,
-        isInt: true,
-        renderTrigger: true
       }
     }]]
   }, {

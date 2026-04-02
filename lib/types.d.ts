@@ -29,6 +29,9 @@ export interface FacetLayoutPosition {
     index: number;
     row: number;
     col: number;
+    rowCount: number;
+    isFirstInRow: boolean;
+    isLastInRow: boolean;
 }
 export interface BalancedFacetLayout {
     rows: number;
@@ -52,12 +55,24 @@ export interface SupersetPluginChartFacetedScatterSpcQueryFormData extends Query
     chart_title?: string;
     x_axis_label?: string;
     y_axis_label?: string;
+    y_axis_label_gap?: number | string;
+    x_axis_label_gap?: number | string;
+    data_zoom_gap?: number | string;
+    facet_title_gap?: number | string;
+    panel_padding?: number | string;
+    left_outer_axis_padding?: number | string;
+    row_gap?: number | string;
+    column_gap?: number | string;
     upper_spec_limit?: number | string | null;
     lower_spec_limit?: number | string | null;
     marker_size?: number | string;
     marker_opacity?: number | string;
     show_legend?: boolean;
     show_data_zoom?: boolean;
+    enable_scroll_wheel_zoom?: boolean;
+    show_data_zoom_slider?: boolean;
+    show_data_zoom_detail_text?: boolean;
+    connect_panels_within_row?: boolean;
     time_format?: string;
     tooltip_time_format?: string;
     y_axis_min?: number | string | null;
@@ -87,13 +102,23 @@ export interface SupersetPluginChartFacetedScatterSpcProps {
     markerSize: number;
     markerOpacity: number;
     showLegend: boolean;
-    showDataZoom: boolean;
+    enableScrollWheelZoom: boolean;
+    showDataZoomSlider: boolean;
+    showDataZoomDetailText: boolean;
+    connectPanelsWithinRow: boolean;
     timeFormat: string;
     tooltipTimeFormat: string;
     yDomain: [number, number];
     upperSpecLimit: number | null;
     lowerSpecLimit: number | null;
-    panelGap: number;
+    yAxisLabelGap: number;
+    xAxisLabelGap: number;
+    dataZoomGap: number;
+    facetTitleGap: number;
+    panelPadding: number;
+    leftOuterAxisPadding: number;
+    rowGap: number;
+    columnGap: number;
     xAxisType: XAxisType;
 }
 //# sourceMappingURL=types.d.ts.map

@@ -80,7 +80,7 @@ function buildLegendValues(panels) {
   return Array.from(new Set(panels.flatMap(panel => panel.points.map(point => point.colorValue).filter(value => Boolean(value)))));
 }
 export default function transformProps(chartProps) {
-  var _queriesData$, _getColumnLabel, _rawFormData$x_axis_l, _rawFormData$y_axis_l, _getColumnLabel2, _parseOptionalNumber, _rawFormData$tooltip_, _rawFormData$facet_so, _rawFormData$chart_ti, _rawFormData$color_sc, _rawFormData$show_leg, _rawFormData$show_dat, _rawFormData$time_for;
+  var _queriesData$, _getColumnLabel, _rawFormData$x_axis_l, _rawFormData$y_axis_l, _getColumnLabel2, _ref2, _metricLabels$, _parseOptionalNumber, _rawFormData$enable_s, _ref3, _rawFormData$show_dat, _rawFormData$show_dat2, _rawFormData$connect_, _rawFormData$tooltip_, _rawFormData$facet_so, _rawFormData$chart_ti, _rawFormData$color_sc, _rawFormData$show_leg, _rawFormData$time_for;
   var {
     width,
     height,
@@ -96,6 +96,7 @@ export default function transformProps(chartProps) {
   var facetColumnLabel = (_getColumnLabel2 = getColumnLabel(rawFormData.facet_column)) != null ? _getColumnLabel2 : 'facet_value';
   var colorColumnLabel = getColumnLabel(rawFormData.color_column);
   var tooltipColumnLabels = ensureIsArray(rawFormData.tooltip_columns).map(column => getColumnLabel(column)).filter(value => Boolean(value));
+  var yFieldKey = (_ref2 = (_metricLabels$ = metricLabels[0]) != null ? _metricLabels$ : getColumnLabel(rawFormData.y_axis_column)) != null ? _ref2 : 'value';
   var maxFacets = parsePositiveInteger(rawFormData.max_facets, 28);
   var maxPanelsPerRow = parsePositiveInteger(rawFormData.max_panels_per_row, 7, {
     max: 7
@@ -106,17 +107,44 @@ export default function transformProps(chartProps) {
   var upperSpecLimit = parseOptionalNumber(rawFormData.upper_spec_limit);
   var yAxisMin = parseOptionalNumber(rawFormData.y_axis_min);
   var yAxisMax = parseOptionalNumber(rawFormData.y_axis_max);
+  var sharedPanelGap = parsePositiveInteger(rawFormData.panel_gap, 12);
+  var yAxisLabelGap = parsePositiveInteger(rawFormData.y_axis_label_gap, 12, {
+    min: 0
+  });
+  var xAxisLabelGap = parsePositiveInteger(rawFormData.x_axis_label_gap, 10, {
+    min: 0
+  });
+  var dataZoomGap = parsePositiveInteger(rawFormData.data_zoom_gap, 10, {
+    min: 0
+  });
+  var facetTitleGap = parsePositiveInteger(rawFormData.facet_title_gap, 12, {
+    min: 0
+  });
+  var panelPadding = parsePositiveInteger(rawFormData.panel_padding, 12, {
+    min: 0
+  });
+  var leftOuterAxisPadding = parsePositiveInteger(rawFormData.left_outer_axis_padding, 16, {
+    min: 0
+  });
+  var rowGap = parsePositiveInteger(rawFormData.row_gap, sharedPanelGap, {
+    min: 0
+  });
+  var columnGap = parsePositiveInteger(rawFormData.column_gap, sharedPanelGap, {
+    min: 0
+  });
+  var enableScrollWheelZoom = (_rawFormData$enable_s = rawFormData.enable_scroll_wheel_zoom) != null ? _rawFormData$enable_s : true;
+  var showDataZoomSlider = (_ref3 = (_rawFormData$show_dat = rawFormData.show_data_zoom_slider) != null ? _rawFormData$show_dat : rawFormData.show_data_zoom) != null ? _ref3 : true;
+  var showDataZoomDetailText = (_rawFormData$show_dat2 = rawFormData.show_data_zoom_detail_text) != null ? _rawFormData$show_dat2 : false;
+  var connectPanelsWithinRow = (_rawFormData$connect_ = rawFormData.connect_panels_within_row) != null ? _rawFormData$connect_ : true;
   var xAxisType = inferXAxisType(xAxisLabel, rawFormData, data);
   var tooltipTimeFormat = (_rawFormData$tooltip_ = rawFormData.tooltip_time_format) != null ? _rawFormData$tooltip_ : '%m-%d-%Y %I:%M:%S %p';
   var tooltipTimeFormatter = getTimeFormatter(tooltipTimeFormat);
   var sortedFacetValues = sortFacetValues(data.map(row => row[facetColumnLabel]), (_rawFormData$facet_so = rawFormData.facet_sort_order) != null ? _rawFormData$facet_so : 'asc', rawFormData.facet_sort_custom).slice(0, maxFacets);
   var panels = sortedFacetValues.map(facetValue => {
     var points = data.reduce((accumulator, row) => {
-      var _ref2, _metricLabels$;
       if (String(row[facetColumnLabel]) !== String(facetValue)) {
         return accumulator;
       }
-      var yFieldKey = (_ref2 = (_metricLabels$ = metricLabels[0]) != null ? _metricLabels$ : getColumnLabel(rawFormData.y_axis_column)) != null ? _ref2 : 'value';
       var yValue = Number(row[yFieldKey]);
       if (!Number.isFinite(yValue)) {
         return accumulator;
@@ -174,7 +202,10 @@ export default function transformProps(chartProps) {
     markerSize,
     markerOpacity,
     showLegend: (_rawFormData$show_leg = rawFormData.show_legend) != null ? _rawFormData$show_leg : true,
-    showDataZoom: (_rawFormData$show_dat = rawFormData.show_data_zoom) != null ? _rawFormData$show_dat : true,
+    enableScrollWheelZoom,
+    showDataZoomSlider,
+    showDataZoomDetailText,
+    connectPanelsWithinRow,
     timeFormat: (_rawFormData$time_for = rawFormData.time_format) != null ? _rawFormData$time_for : 'smart_date',
     tooltipTimeFormat,
     yDomain: computeYDomain(yValues, {
@@ -185,7 +216,14 @@ export default function transformProps(chartProps) {
     }),
     upperSpecLimit,
     lowerSpecLimit,
-    panelGap: parsePositiveInteger(rawFormData.panel_gap, 12),
+    yAxisLabelGap,
+    xAxisLabelGap,
+    dataZoomGap,
+    facetTitleGap,
+    panelPadding,
+    leftOuterAxisPadding,
+    rowGap,
+    columnGap,
     xAxisType
   };
 }

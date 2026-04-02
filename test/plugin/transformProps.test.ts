@@ -17,6 +17,18 @@ describe('transformProps', () => {
           color_column: 'status',
           tooltip_columns: ['pallet_id'],
           tooltip_time_format: '%m-%d-%Y %I:%M:%S %p',
+          y_axis_label_gap: 14,
+          x_axis_label_gap: 11,
+          data_zoom_gap: 9,
+          facet_title_gap: 13,
+          panel_padding: 10,
+          left_outer_axis_padding: 20,
+          row_gap: 18,
+          column_gap: 3,
+          enable_scroll_wheel_zoom: true,
+          show_data_zoom_slider: true,
+          show_data_zoom_detail_text: false,
+          connect_panels_within_row: true,
           facet_sort_order: 'asc',
           max_facets: 8,
           max_panels_per_row: 7,
@@ -61,7 +73,18 @@ describe('transformProps', () => {
     expect(props.legendValues).toEqual(['Pass', 'Warn']);
     expect(props.xAxisLabel).toBe('Sample Time');
     expect(props.yAxisLabel).toBe('Adhesive OD');
-    expect(props.showDataZoom).toBe(true);
+    expect(props.enableScrollWheelZoom).toBe(true);
+    expect(props.showDataZoomSlider).toBe(true);
+    expect(props.showDataZoomDetailText).toBe(false);
+    expect(props.connectPanelsWithinRow).toBe(true);
+    expect(props.yAxisLabelGap).toBe(14);
+    expect(props.xAxisLabelGap).toBe(11);
+    expect(props.dataZoomGap).toBe(9);
+    expect(props.facetTitleGap).toBe(13);
+    expect(props.panelPadding).toBe(10);
+    expect(props.leftOuterAxisPadding).toBe(20);
+    expect(props.rowGap).toBe(18);
+    expect(props.columnGap).toBe(3);
     expect(props.panels[0].points[0].tooltipValues[0]).toEqual({
       label: 'Sample Time',
       value: '03-18-2026 08:00:00 AM',

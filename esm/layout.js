@@ -103,7 +103,10 @@ export function getBalancedFacetLayout(count, maxCols) {
       positions.push({
         index: value,
         row,
-        col
+        col,
+        rowCount: chunk.length,
+        isFirstInRow: col === 0,
+        isLastInRow: col === chunk.length - 1
       });
     });
   });

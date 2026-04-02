@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
 import { CategoricalColorNamespace } from '@superset-ui/core';
-import { chunkFacetValuesIntoBalancedRows } from './layout';
 import FacetPanel from './FacetPanel';
 import type {
   FacetPanelData,
@@ -33,24 +32,47 @@ export default function FacetedScatterSpcChart({
   markerSize,
   markerOpacity,
   showLegend,
-  showDataZoom,
+  enableScrollWheelZoom,
+  showDataZoomSlider,
+  showDataZoomDetailText,
+  connectPanelsWithinRow,
   timeFormat,
   yDomain,
   upperSpecLimit,
   lowerSpecLimit,
-  panelGap,
+  yAxisLabelGap,
+  xAxisLabelGap,
+  dataZoomGap,
+  facetTitleGap,
+  panelPadding,
+  leftOuterAxisPadding,
+  rowGap,
+  columnGap,
   xAxisType,
 }: SupersetPluginChartFacetedScatterSpcProps) {
   const colorScale = useMemo(() => CategoricalColorNamespace.getScale(colorScheme), [colorScheme]);
   const effectiveLegendValues = legendValues.length ? legendValues : buildLegendValues(panels);
-  const rows = chunkFacetValuesIntoBalancedRows(panels, Math.max(layout.cols, 1));
   const [sharedZoom, setSharedZoom] = useState<FacetZoomState | null>(null);
   const [selectedXKey, setSelectedXKey] = useState<string | null>(null);
+  const rows = useMemo(() => {
+    let cursor = 0;
+    return layout.rowCounts.map((rowCount, rowIndex) => {
+      const rowPanels = panels.slice(cursor, cursor + rowCount).map((panel, colIndex) => ({
+        panel,
+        position: layout.positions[cursor + colIndex],
+      }));
+      cursor += rowCount;
+      return {
+        rowIndex,
+        rowPanels,
+      };
+    });
+  }, [layout.positions, layout.rowCounts, panels]);
   const titleHeight = chartTitle ? 28 : 0;
   const legendHeight = showLegend && effectiveLegendValues.length ? 34 : 0;
   const availableHeight = Math.max(
     240,
-    height - titleHeight - legendHeight - panelGap * Math.max(layout.rows - 1, 0),
+    height - titleHeight - legendHeight - rowGap * Math.max(layout.rows - 1, 0),
   );
   const rowHeight = layout.rows
     ? Math.max(220, Math.floor(availableHeight / layout.rows))
@@ -122,22 +144,26 @@ export default function FacetedScatterSpcChart({
         >
           {yAxisLabel}
         </div>
-        <div style={{ display: 'flex', flex: 1, flexDirection: 'column', gap: panelGap, minWidth: 0 }}>
-          <div style={{ display: 'flex', flex: 1, flexDirection: 'column', gap: panelGap, overflow: 'auto' }}>
-            {rows.map((rowPanels, rowIndex) => (
+        <div style={{ display: 'flex', flex: 1, flexDirection: 'column', gap: rowGap, minWidth: 0 }}>
+          <div style={{ display: 'flex', flex: 1, flexDirection: 'column', gap: rowGap, overflow: 'auto' }}>
+            {rows.map(({ rowIndex, rowPanels }) => (
               <div
                 key={`row-${rowIndex}`}
                 style={{
                   display: 'grid',
-                  gap: panelGap,
+                  gap: columnGap,
                   gridTemplateColumns: `repeat(${rowPanels.length}, minmax(0, 1fr))`,
                 }}
               >
-                {rowPanels.map(panel => (
+                {rowPanels.map(({ panel, position }) => (
                   <FacetPanel
                     key={panel.key}
                     panel={panel}
                     height={rowHeight}
+                    rowIndex={rowIndex}
+                    rowCount={position?.rowCount ?? rowPanels.length}
+                    isFirstInRow={position?.isFirstInRow ?? false}
+                    isLastInRow={position?.isLastInRow ?? false}
                     xAxisType={xAxisType}
                     xAxisLabel={xAxisLabel}
                     yAxisLabel=""
@@ -147,7 +173,17 @@ export default function FacetedScatterSpcChart({
                     timeFormat={timeFormat}
                     upperSpecLimit={upperSpecLimit}
                     lowerSpecLimit={lowerSpecLimit}
-                    showDataZoom={showDataZoom}
+                    enableScrollWheelZoom={enableScrollWheelZoom}
+                    showDataZoomSlider={showDataZoomSlider}
+                    showDataZoomDetailText={showDataZoomDetailText}
+                    connectPanelsWithinRow={connectPanelsWithinRow}
+                    yAxisLabelGap={yAxisLabelGap}
+                    xAxisLabelGap={xAxisLabelGap}
+                    dataZoomGap={dataZoomGap}
+                    facetTitleGap={facetTitleGap}
+                    panelPadding={panelPadding}
+                    leftOuterAxisPadding={leftOuterAxisPadding}
+                    columnGap={columnGap}
                     sharedZoom={sharedZoom}
                     selectedXKey={selectedXKey}
                     onZoomChange={setSharedZoom}

@@ -120,6 +120,9 @@ export function getBalancedFacetLayout(
         index: value,
         row,
         col,
+        rowCount: chunk.length,
+        isFirstInRow: col === 0,
+        isLastInRow: col === chunk.length - 1,
       });
     });
   });
